@@ -1,50 +1,43 @@
-# Gradle files
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
+
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-# Local configuration file (sdk path, etc)
-local.properties
-
+!gradle/wrapper/gradle-wrapper.jar
 # Android Studio
-.idea/
-*.iml
-*.iws
-*.ipr
-.navigation/
-captures/
-.externalNativeBuild/
-.cxx/
-
-# OS-specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Log files
-*.log
-
 # Android Studio generated files
-*.apk
-*.ap_
-*.aab
-*.dex
-
-# Kotlin
-.kotlin/
-
+# Environment variables
+# Google Services (e.g. APIs or Firebase)
+# Gradle files
 # Keystore files (do not commit!)
+# Kotlin
+# Local configuration file (sdk path, etc)
+# Log files
+# OS-specific files
+*.aab
+*.ap_
+*.apk
+*.dex
+*.iml
+*.ipr
+*.iws
 *.jks
 *.keystore
-
-# Google Services (e.g. APIs or Firebase)
-google-services.json
-
-# Environment variables
+*.log
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+._*
+.cxx/
 .env
+.externalNativeBuild/
+.gradle/
+.idea/
+.kotlin/
+.navigation/
+Thumbs.db
+build/
+captures/
+ehthumbs.db
+google-services.json
+local.properties
+web/
