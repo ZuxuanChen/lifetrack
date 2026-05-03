@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { seedData } from './db';
 import BottomNav from './components/BottomNav';
+import DashboardView from './components/DashboardView';
 import ScheduleView from './components/ScheduleView';
 import GoalView from './components/GoalView';
 import TaskView from './components/TaskView';
 import SleepView from './components/SleepView';
 
-type Tab = 'schedule' | 'goal' | 'task' | 'sleep';
+type Tab = 'dashboard' | 'schedule' | 'goal' | 'task' | 'sleep';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('schedule');
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -31,6 +32,7 @@ function App() {
   return (
     <div className="h-full flex flex-col bg-gray-50">
       <main className="flex-1 overflow-hidden pb-14">
+        {activeTab === 'dashboard' && <DashboardView onNavigate={setActiveTab} />}
         {activeTab === 'schedule' && <ScheduleView />}
         {activeTab === 'goal' && <GoalView />}
         {activeTab === 'task' && <TaskView />}

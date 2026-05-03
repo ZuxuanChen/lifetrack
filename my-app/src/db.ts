@@ -12,6 +12,7 @@ export interface Goal {
 }
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskScheduleType = 'single' | 'recurring';
 
 export interface Task {
   id?: number;
@@ -19,12 +20,14 @@ export interface Task {
   title: string;
   status: TaskStatus;
   priority: number; // 1-3
+  scheduleType: TaskScheduleType; // single = 拖拽一次后消失, recurring = 可多次使用
   createdAt: string;
   completedAt?: string;
 }
 
 export interface Lesson {
   id?: number;
+  taskId?: number; // optional, link to a task
   title: string;
   dayOfWeek: number; // 0=Sun, 1=Mon, ..., 6=Sat
   startHour: number; // 0-23
@@ -53,10 +56,10 @@ export class LifeTrackDB extends Dexie {
 
   constructor() {
     super('LifeTrackDB');
-    this.version(1).stores({
+    this.version(2).stores({
       goals: '++id, createdAt',
       tasks: '++id, goalId, status, createdAt',
-      lessons: '++id, dayOfWeek',
+      lessons: '++id, dayOfWeek, taskId',
       sleepRecords: '++id, date',
     });
   }
@@ -88,9 +91,9 @@ export async function seedData() {
   const goals = await db.goals.toArray();
   if (goals.length >= 2) {
     await db.tasks.bulkAdd([
-      { goalId: goals[0].id, title: '背单词 50 个', status: 'done', priority: 2, createdAt: new Date().toISOString() },
-      { goalId: goals[0].id, title: '听力练习 30 分钟', status: 'in_progress', priority: 2, createdAt: new Date().toISOString() },
-      { goalId: goals[1].id, title: '跑步 5 公里', status: 'todo', priority: 1, createdAt: new Date().toISOString() },
+      { goalId: goals[0].id, title: '背单词 50 个', status: 'done', priority: 2, scheduleType: 'single', createdAt: new Date().toISOString() },
+      { goalId: goals[0].id, title: '听力练习 30 分钟', status: 'in_progress', priority: 2, scheduleType: 'recurring', createdAt: new Date().toISOString() },
+      { goalId: goals[1].id, title: '跑步 5 公里', status: 'todo', priority: 1, scheduleType: 'single', createdAt: new Date().toISOString() },
     ]);
   }
 }

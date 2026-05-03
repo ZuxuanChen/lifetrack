@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, type Task, type Goal } from '../db';
-import { Plus, X, CheckCircle2, Circle, Clock, ArrowRight, Filter } from 'lucide-react';
+import { Plus, X, CheckCircle2, Circle, Clock, ArrowRight, Filter, Repeat, Zap } from 'lucide-react';
 
 type FilterStatus = 'all' | 'todo' | 'in_progress' | 'done';
 
@@ -40,6 +40,7 @@ export default function TaskView() {
   const [goalId, setGoalId] = useState<number | undefined>(undefined);
   const [priority, setPriority] = useState(2);
   const [status, setStatus] = useState<Task['status']>('todo');
+  const [scheduleType, setScheduleType] = useState<Task['scheduleType']>('single');
 
   useEffect(() => {
     loadData();
@@ -61,12 +62,14 @@ export default function TaskView() {
       setGoalId(task.goalId);
       setPriority(task.priority);
       setStatus(task.status);
+      setScheduleType(task.scheduleType);
     } else {
       setEditing(null);
       setTitle('');
       setGoalId(undefined);
       setPriority(2);
       setStatus('todo');
+      setScheduleType('single');
     }
     setShowForm(true);
   }
@@ -78,6 +81,7 @@ export default function TaskView() {
       goalId: goalId || undefined,
       priority,
       status,
+      scheduleType,
       createdAt: editing?.createdAt || new Date().toISOString(),
       completedAt: status === 'done' ? (editing?.completedAt || new Date().toISOString()) : undefined,
     };
@@ -166,7 +170,7 @@ export default function TaskView() {
           const goal = goals.find(g => g.id === task.goalId);
           return (
             <div key={task.id}
-                 className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-start gap-3">
+                 className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-start gap-3 ${task.status === 'done' ? 'opacity-60' : ''}`}>
               <button onClick={() => toggleStatus(task)} className="mt-0.5 shrink-0">
                 {task.status === 'done' ? (
                   <CheckCircle2 size={22} className="text-green-500" />
@@ -181,13 +185,22 @@ export default function TaskView() {
                 <div className={`font-medium ${task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-900'}`}>
                   {task.title}
                 </div>
-                <div className="flex items-center gap-2 mt-1.5">
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[task.status]}`}>
                     {STATUS_LABELS[task.status]}
                   </span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
                     {PRIORITY_LABELS[task.priority]}优先级
                   </span>
+                  {task.scheduleType === 'recurring' ? (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 flex items-center gap-0.5">
+                      <Repeat size={10} /> 多次
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex items-center gap-0.5">
+                      <Zap size={10} /> 单次
+                    </span>
+                  )}
                   {goal && (
                     <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
                       <ArrowRight size={10} />
@@ -244,6 +257,28 @@ export default function TaskView() {
                     <option value="in_progress">进行中</option>
                     <option value="done">已完成</option>
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">排课类型</label>
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={() => setScheduleType('single')}
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
+                      scheduleType === 'single' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    <Zap size={12} /> 单次（用完消失）
+                  </button>
+                  <button
+                    onClick={() => setScheduleType('recurring')}
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
+                      scheduleType === 'recurring' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    <Repeat size={12} /> 多次（可反复用）
+                  </button>
                 </div>
               </div>
             </div>

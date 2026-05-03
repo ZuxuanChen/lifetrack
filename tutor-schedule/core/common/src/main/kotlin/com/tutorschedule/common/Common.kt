@@ -18,10 +18,6 @@ sealed class TutorException(
     cause: Throwable? = null
 ) : Exception(message, cause) {
 
-    class NetworkError(
-        cause: Throwable? = null
-    ) : TutorException("网络连接失败，请检查网络", cause)
-
     class DatabaseError(
         cause: Throwable? = null
     ) : TutorException("本地数据错误", cause)
@@ -44,14 +40,6 @@ sealed class TutorException(
     class NotFoundError(
         val resource: String
     ) : TutorException("$resource 不存在")
-
-    class SyncError(
-        cause: Throwable? = null
-    ) : TutorException("数据同步失败", cause)
-
-    class Unauthorized(
-        cause: Throwable? = null
-    ) : TutorException("登录已过期，请重新登录", cause)
 }
 
 enum class ConflictType {
@@ -253,5 +241,4 @@ object TutorConstants {
     const val TEACHER_MAX_DAILY_LESSONS = 8
     const val DATABASE_NAME = "tutor_schedule.db"
     const val DATASTORE_NAME = "tutor_prefs"
-    const val BASE_API_URL = "https://api.tutorschedule.com/v1/"
 }

@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
-import { db, type Lesson } from '../db';
-import { Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { db, type Lesson, type Task, type Goal } from '../db';
+import { Plus, X, ChevronLeft, ChevronRight, ListTodo, GripVertical } from 'lucide-react';
 
 const DAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 const START_HOUR = 7;
 const END_HOUR = 23;
-const SLOT_HEIGHT = 48; // pixels per 30min slot
+const SLOT_HEIGHT = 48;
 
 const COLORS = [
   '#4A6FA5', '#FF6B6B', '#34C759', '#FF9500', '#AF52DE',
@@ -14,7 +14,12 @@ const COLORS = [
 
 export default function ScheduleView() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showTaskPanel, setShowTaskPanel] = useState(false);
+  const [showTaskScheduleForm, setShowTaskScheduleForm] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editing, setEditing] = useState<Lesson | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -28,6 +33,7 @@ export default function ScheduleView() {
 
   useEffect(() => {
     loadLessons();
+    loadTasks();
   }, []);
 
   async function loadLessons() {
@@ -35,16 +41,23 @@ export default function ScheduleView() {
     setLessons(all);
   }
 
-  const timeSlots = useMemo(() => {
-    const slots: string[] = [];
-    for (let h = START_HOUR; h < END_HOUR; h++) {
-      slots.push(`${h}:00`);
-      slots.push(`${h}:30`);
-    }
-    return slots;
-  }, []);
+  async function loadTasks() {
+    const [allTasks, allGoals] = await Promise.all([
+      db.tasks.toArray(),
+      db.goals.toArray(),
+    ]);
+    // Load ALL tasks so we can check done status for lessons
+    setTasks(allTasks);
+    setGoals(allGoals);
+  }
 
-  const weekDates = useMemo(() => {
+  const timeSlots: string[] = [];
+  for (let h = START_HOUR; h < END_HOUR; h++) {
+    timeSlots.push(`${h}:00`);
+    timeSlots.push(`${h}:30`);
+  }
+
+  const weekDates = (() => {
     const today = new Date();
     const currentDay = today.getDay();
     const startOfWeek = new Date(today);
@@ -56,7 +69,7 @@ export default function ScheduleView() {
       dates.push(d);
     }
     return dates;
-  }, [weekOffset]);
+  })();
 
   function openForm(lesson?: Lesson) {
     if (lesson) {
@@ -109,6 +122,43 @@ export default function ScheduleView() {
     }
   }
 
+  // Schedule a task into the calendar
+  function openTaskScheduleForm(task: Task) {
+    setSelectedTask(task);
+    setTitle(task.title);
+    setDayOfWeek(new Date().getDay());
+    setStartHour(9);
+    setStartMinute(0);
+    setDuration(60);
+    const goal = goals.find(g => g.id === task.goalId);
+    setColor(goal?.color || COLORS[0]);
+    setLocation('');
+    setShowTaskPanel(false);
+    setShowTaskScheduleForm(true);
+  }
+
+  async function saveTaskAsLesson() {
+    if (!selectedTask) return;
+    const data: Lesson = {
+      taskId: selectedTask.id,
+      title: title.trim() || selectedTask.title,
+      dayOfWeek,
+      startHour,
+      startMinute,
+      durationMinutes: 60,
+      color,
+      location: location.trim() || undefined,
+    };
+    await db.lessons.add(data);
+
+    // Task stays in task list regardless of scheduleType
+
+    setShowTaskScheduleForm(false);
+    setSelectedTask(null);
+    loadLessons();
+    loadTasks();
+  }
+
   function getLessonStyle(lesson: Lesson) {
     const slotIndex = (lesson.startHour - START_HOUR) * 2 + (lesson.startMinute >= 30 ? 1 : 0);
     const top = slotIndex * SLOT_HEIGHT;
@@ -123,15 +173,93 @@ export default function ScheduleView() {
            date.getDate() === t.getDate();
   };
 
+  // Drag: task -> lesson slot
+  function handleTaskDragStart(e: React.DragEvent, task: Task) {
+    e.dataTransfer.setData('type', 'task');
+    e.dataTransfer.setData('taskId', String(task.id));
+    e.dataTransfer.setData('taskTitle', task.title);
+    e.dataTransfer.setData('goalId', String(task.goalId || ''));
+    e.dataTransfer.setData('scheduleType', task.scheduleType);
+    e.dataTransfer.effectAllowed = 'copy';
+  }
+
+  // Drag: lesson -> move
+  function handleLessonDragStart(e: React.DragEvent, lesson: Lesson) {
+    e.dataTransfer.setData('type', 'lesson');
+    e.dataTransfer.setData('lessonId', String(lesson.id));
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  async function handleDropOnSlot(e: React.DragEvent, dayIdx: number, slotIdx: number) {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('type');
+    const hour = START_HOUR + Math.floor(slotIdx / 2);
+    const minute = (slotIdx % 2) * 30;
+
+    if (type === 'lesson') {
+      const lessonId = Number(e.dataTransfer.getData('lessonId'));
+      if (!lessonId) return;
+      await db.lessons.update(lessonId, {
+        dayOfWeek: dayIdx,
+        startHour: hour,
+        startMinute: minute,
+      });
+      loadLessons();
+      return;
+    }
+
+    if (type === 'task') {
+      const taskId = Number(e.dataTransfer.getData('taskId'));
+      const taskTitle = e.dataTransfer.getData('taskTitle');
+      const goalIdStr = e.dataTransfer.getData('goalId');
+      const goal = goals.find(g => g.id === Number(goalIdStr));
+
+      await db.lessons.add({
+        taskId,
+        title: taskTitle,
+        dayOfWeek: dayIdx,
+        startHour: hour,
+        startMinute: minute,
+        durationMinutes: 60,
+        color: goal?.color || COLORS[0],
+      });
+
+      loadLessons();
+      loadTasks();
+    }
+  }
+
+  async function handleDropOnDayColumn(e: React.DragEvent, dayIdx: number) {
+    e.preventDefault();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const slotIdx = Math.floor(y / SLOT_HEIGHT);
+    handleDropOnSlot(e, dayIdx, Math.max(0, Math.min(slotIdx, timeSlots.length - 1)));
+  }
+
+  // Tasks for checking done status
+  const allTasksRef = tasks;
+  const undoneTasks = tasks.filter(t => t.status !== 'done');
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-lg font-bold">课程表</h1>
-          <button onClick={() => openForm()} className="bg-blue-600 text-white p-2 rounded-full shadow-sm">
-            <Plus size={18} />
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => { setShowTaskPanel(!showTaskPanel); loadTasks(); }}
+                    className={`p-2 rounded-full shadow-sm ${showTaskPanel ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'}`}>
+              <ListTodo size={18} />
+            </button>
+            <button onClick={() => openForm()} className="bg-blue-600 text-white p-2 rounded-full shadow-sm">
+              <Plus size={18} />
+            </button>
+          </div>
         </div>
         <div className="flex items-center justify-between">
           <button onClick={() => setWeekOffset(w => w - 1)} className="p-1 text-gray-500">
@@ -146,6 +274,39 @@ export default function ScheduleView() {
           </button>
         </div>
       </div>
+
+      {/* Task Panel */}
+      {showTaskPanel && (
+        <div className="bg-orange-50 border-b border-orange-100 px-4 py-2 max-h-40 overflow-y-auto">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-orange-700">未完成任务 — 拖拽到课程表，或点击安排</span>
+            <button onClick={() => setShowTaskPanel(false)} className="text-orange-400"><X size={14} /></button>
+          </div>
+          {undoneTasks.length === 0 ? (
+            <p className="text-xs text-gray-400 py-1">没有未完成的任务</p>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              {undoneTasks.map(task => (
+                <div
+                  key={task.id}
+                  draggable
+                  onDragStart={(e) => handleTaskDragStart(e, task)}
+                  className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-orange-200 text-xs cursor-grab active:cursor-grabbing shadow-sm"
+                >
+                  <GripVertical size={12} className="text-gray-300" />
+                  <span className="truncate max-w-[120px]">{task.title}</span>
+                  <button
+                    onClick={() => openTaskScheduleForm(task)}
+                    className="ml-1 text-orange-600 hover:text-orange-800 font-medium"
+                  >
+                    安排
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Day headers */}
       <div className="flex bg-white border-b border-gray-200">
@@ -176,7 +337,9 @@ export default function ScheduleView() {
           {/* Day columns */}
           {DAYS.map((_, dayIdx) => (
             <div key={dayIdx} className="flex-1 relative border-r border-gray-100 last:border-r-0"
-                 style={{ height: timeSlots.length * SLOT_HEIGHT }}>
+                 style={{ height: timeSlots.length * SLOT_HEIGHT }}
+                 onDragOver={handleDragOver}
+                 onDrop={(e) => handleDropOnDayColumn(e, dayIdx)}>
               {/* Grid lines */}
               {timeSlots.map((_, i) => (
                 <div key={i} className="border-b border-gray-50"
@@ -185,22 +348,31 @@ export default function ScheduleView() {
               {/* Lessons */}
               {lessons.filter(l => l.dayOfWeek === dayIdx).map(lesson => {
                 const style = getLessonStyle(lesson);
+                const linkedTask = lesson.taskId ? allTasksRef.find(t => t.id === lesson.taskId) : undefined;
+                const isDone = linkedTask?.status === 'done';
                 return (
-                  <button
+                  <div
                     key={lesson.id}
+                    draggable
+                    onDragStart={(e) => handleLessonDragStart(e, lesson)}
                     onClick={() => openForm(lesson)}
-                    className="absolute left-0.5 right-0.5 rounded-lg px-1.5 py-1 text-left text-xs text-white overflow-hidden shadow-sm"
+                    className={`absolute left-0.5 right-0.5 rounded-lg px-1.5 py-1 text-left text-xs text-white overflow-hidden shadow-sm cursor-grab active:cursor-grabbing ${
+                      isDone ? 'opacity-50' : ''
+                    }`}
                     style={{
                       top: style.top,
                       height: style.height - 2,
                       backgroundColor: lesson.color,
                     }}
                   >
-                    <div className="font-semibold truncate">{lesson.title}</div>
+                    <div className={`font-semibold truncate ${isDone ? 'line-through' : ''}`}>{lesson.title}</div>
                     {style.height > 30 && lesson.location && (
-                      <div className="truncate opacity-80">{lesson.location}</div>
+                      <div className={`truncate opacity-80 ${isDone ? 'line-through' : ''}`}>{lesson.location}</div>
                     )}
-                  </button>
+                    {isDone && (
+                      <div className="absolute top-0.5 right-0.5 text-[8px] bg-white/30 px-1 rounded">已完成</div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -208,7 +380,7 @@ export default function ScheduleView() {
         </div>
       </div>
 
-      {/* Form Modal */}
+      {/* Lesson Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
              onClick={() => setShowForm(false)}>
@@ -289,6 +461,82 @@ export default function ScheduleView() {
               <button onClick={saveLesson}
                       className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-medium">
                 保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Schedule Form Modal */}
+      {showTaskScheduleForm && selectedTask && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
+             onClick={() => setShowTaskScheduleForm(false)}>
+          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+               onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">安排任务到课程表</h2>
+              <button onClick={() => setShowTaskScheduleForm(false)}><X size={20} className="text-gray-400" /></button>
+            </div>
+
+            <div className="bg-blue-50 rounded-lg p-3 mb-3 text-sm text-blue-800">
+              任务: <strong>{selectedTask.title}</strong>
+              {selectedTask.scheduleType === 'single' && (
+                <span className="ml-2 text-xs text-orange-600">（单次任务，安排后将从列表移除）</span>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-500">课程名称（可修改）</label>
+                <input value={title} onChange={e => setTitle(e.target.value)}
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">星期</label>
+                <select value={dayOfWeek} onChange={e => setDayOfWeek(Number(e.target.value))}
+                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                </select>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-sm text-gray-500">开始时间</label>
+                  <div className="flex gap-2 mt-1">
+                    <select value={startHour} onChange={e => setStartHour(Number(e.target.value))}
+                            className="flex-1 px-2 py-2 border border-gray-300 rounded-lg">
+                      {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{i}:00</option>)}
+                    </select>
+                    <select value={startMinute} onChange={e => setStartMinute(Number(e.target.value))}
+                            className="flex-1 px-2 py-2 border border-gray-300 rounded-lg">
+                      <option value={0}>00</option>
+                      <option value={30}>30</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+                默认时长: <strong>60分钟</strong>（1小时）
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">颜色</label>
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  {COLORS.map(c => (
+                    <button key={c} onClick={() => setColor(c)}
+                            className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-gray-800 scale-110' : 'border-transparent'}`}
+                            style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-5">
+              <button onClick={saveTaskAsLesson}
+                      className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-medium">
+                安排到课程表
               </button>
             </div>
           </div>

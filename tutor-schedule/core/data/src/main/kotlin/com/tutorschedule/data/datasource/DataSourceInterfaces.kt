@@ -21,31 +21,11 @@ interface LessonLocalDataSource {
     /** Room + Flow 实时监听 */
     fun observeLessonsBetween(start: Instant, end: Instant): Flow<List<LessonDataModel>>
 
-    /** 获取待同步的记录 */
-    suspend fun getPendingSyncLessons(): List<LessonDataModel>
-
-    /** 标记为已同步 */
-    suspend fun markAsSynced(id: String, remoteUpdatedAt: Long)
-
     /** 按学生查询课程（避免全表扫描） */
     suspend fun getLessonsByStudent(studentId: String): List<LessonDataModel>
 
     /** 按教师查询课程（避免全表扫描） */
     suspend fun getLessonsByTeacher(teacherId: String): List<LessonDataModel>
-}
-
-/**
- * 课程远程数据源接口 — 定义在 :core:data，由 :core:remote 实现
- *
- * 返回值使用 Data 层内部模型 [LessonDataModel]
- * 实现者负责：DTO ↔ DataModel 的映射
- */
-interface LessonRemoteDataSource {
-    suspend fun fetchLessonsForWeek(startIso: String, endIso: String): List<LessonDataModel>
-    suspend fun createLesson(lesson: LessonDataModel): LessonDataModel
-    suspend fun updateLesson(id: String, lesson: LessonDataModel): LessonDataModel
-    suspend fun deleteLesson(id: String)
-    suspend fun getChangesSince(lastSyncTimestamp: Long): SyncChangesResult
 }
 
 /**
@@ -61,16 +41,6 @@ interface StudentLocalDataSource {
 }
 
 /**
- * 学生远程数据源接口
- */
-interface StudentRemoteDataSource {
-    suspend fun fetchAllStudents(): List<StudentDataModel>
-    suspend fun createStudent(student: StudentDataModel): StudentDataModel
-    suspend fun updateStudent(id: String, student: StudentDataModel): StudentDataModel
-    suspend fun deleteStudent(id: String)
-}
-
-/**
  * 教师本地数据源接口
  */
 interface TeacherLocalDataSource {
@@ -78,20 +48,3 @@ interface TeacherLocalDataSource {
     suspend fun getTeacher(id: String): TeacherDataModel?
     fun observeAllTeachers(): Flow<List<TeacherDataModel>>
 }
-
-/**
- * 教师远程数据源接口
- */
-interface TeacherRemoteDataSource {
-    suspend fun fetchAllTeachers(): List<TeacherDataModel>
-}
-
-/**
- * 同步变更结果
- */
-data class SyncChangesResult(
-    val lessonsCreated: List<LessonDataModel>,
-    val lessonsUpdated: List<LessonDataModel>,
-    val lessonsDeleted: List<String>,
-    val serverTimestamp: Long
-)

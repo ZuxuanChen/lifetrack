@@ -9,9 +9,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.tutorschedule.feature.schedule.WeeklyScheduleScreen
 import com.tutorschedule.navigation.ScheduleNavigation
-import com.tutorschedule.navigation.StudentNavigation
-import com.tutorschedule.navigation.TeacherNavigation
-import com.tutorschedule.navigation.SettingsNavigation
 
 /**
  * 应用导航图 — 组装所有 Feature 路由
@@ -55,31 +52,6 @@ fun AppNavHost(
             )
         ) {
             // DailyScheduleScreen(dateIso = it.arguments?.getString("dateIso") ?: "")
-        }
-
-        // 学生列表
-        composable(route = "student_list") {
-            // StudentListScreen()
-        }
-
-        // 学生详情
-        composable(
-            route = "student_detail/{studentId}",
-            arguments = listOf(
-                navArgument("studentId") { type = NavType.StringType }
-            )
-        ) {
-            // StudentDetailScreen(studentId = it.arguments?.getString("studentId") ?: "")
-        }
-
-        // 教师列表
-        composable(route = "teacher_list") {
-            // TeacherListScreen()
-        }
-
-        // 设置
-        composable(route = "settings") {
-            // SettingsScreen()
         }
     }
 }

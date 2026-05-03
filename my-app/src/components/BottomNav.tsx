@@ -1,6 +1,6 @@
-import { Calendar, Target, ListTodo, Moon } from 'lucide-react';
+import { Calendar, Target, ListTodo, Moon, LayoutDashboard } from 'lucide-react';
 
-type Tab = 'schedule' | 'goal' | 'task' | 'sleep';
+type Tab = 'dashboard' | 'schedule' | 'goal' | 'task' | 'sleep';
 
 interface Props {
   active: Tab;
@@ -8,6 +8,7 @@ interface Props {
 }
 
 const tabs: { key: Tab; label: string; icon: typeof Calendar }[] = [
+  { key: 'dashboard', label: '总览', icon: LayoutDashboard },
   { key: 'schedule', label: '课程表', icon: Calendar },
   { key: 'task', label: '任务', icon: ListTodo },
   { key: 'goal', label: '目标', icon: Target },

@@ -54,14 +54,6 @@ class RoomLessonDataSource @Inject constructor(
         ).map { list -> list.map { it.toDataModel() } }
     }
 
-    override suspend fun getPendingSyncLessons(): List<LessonDataModel> {
-        return lessonDao.getPendingSyncLessons().map { it.toDataModel() }
-    }
-
-    override suspend fun markAsSynced(id: String, remoteUpdatedAt: Long) {
-        lessonDao.markAsSynced(id, remoteUpdatedAt)
-    }
-
     override suspend fun getLessonsByStudent(studentId: String): List<LessonDataModel> {
         return lessonDao.getLessonsByStudent(studentId).map { it.toDataModel() }
     }
@@ -82,7 +74,6 @@ class RoomLessonDataSource @Inject constructor(
         recurrenceJson = recurrenceJson,
         roomId = roomId,
         statusCode = statusCode,
-        syncStatus = LessonDataModel.SyncStatus.valueOf(syncStatus),
         createdAtMillis = createdAt,
         updatedAtMillis = updatedAt
     )
@@ -97,7 +88,6 @@ class RoomLessonDataSource @Inject constructor(
         recurrenceJson = recurrenceJson,
         roomId = roomId,
         statusCode = statusCode,
-        syncStatus = syncStatus.name,
         createdAt = createdAtMillis,
         updatedAt = updatedAtMillis
     )

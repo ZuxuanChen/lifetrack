@@ -13,8 +13,7 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["start_time", "end_time"], name = "idx_lesson_time_range"),
         Index(value = ["student_id"], name = "idx_lesson_student"),
-        Index(value = ["teacher_id"], name = "idx_lesson_teacher"),
-        Index(value = ["sync_status"], name = "idx_lesson_sync")
+        Index(value = ["teacher_id"], name = "idx_lesson_teacher")
     ]
 )
 data class LessonEntity(
@@ -45,9 +44,6 @@ data class LessonEntity(
 
     @ColumnInfo(name = "status_code")
     val statusCode: String,
-
-    @ColumnInfo(name = "sync_status")
-    val syncStatus: String,  // "SYNCED", "PENDING", "CONFLICT"
 
     @ColumnInfo(name = "created_at")
     val createdAt: Long,

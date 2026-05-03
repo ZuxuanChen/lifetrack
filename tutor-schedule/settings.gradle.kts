@@ -22,11 +22,7 @@ include(
     ":core:domain",
     ":core:data",
     ":core:local",
-    ":core:remote",
     ":design-system",
     ":core-navigation",
-    ":feature:schedule",
-    ":feature:student",
-    ":feature:teacher",
-    ":feature:settings"
+    ":feature:schedule"
 )

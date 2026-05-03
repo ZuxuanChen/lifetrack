@@ -3,9 +3,9 @@ package com.tutorschedule.data.model
 /**
  * 数据层内部模型 — 存储无关的中间表示
  *
- * 位于 :core:data 模块，作为 Local/Remote DataSource 与 RepositoryImpl 之间的通用语言。
+ * 位于 :core:data 模块，作为 Local DataSource 与 RepositoryImpl 之间的通用语言。
  * 不暴露给 Domain 层（Domain 使用 [com.tutorschedule.domain.model.Lesson]），
- * 也不暴露给 Local/Remote 层（它们使用 Entity/DTO）。
+ * 也不暴露给 Local 层（它们使用 Entity）。
  */
 
 data class LessonDataModel(
@@ -18,16 +18,9 @@ data class LessonDataModel(
     val recurrenceJson: String?,    // JSON serialized RecurrencePattern
     val roomId: String?,
     val statusCode: String,         // LessonStatus enum name
-    val syncStatus: SyncStatus,
     val createdAtMillis: Long,
     val updatedAtMillis: Long
-) {
-    enum class SyncStatus {
-        SYNCED,      // 本地与远程一致
-        PENDING,     // 本地修改待同步
-        CONFLICT     // 同步冲突需人工解决
-    }
-}
+)
 
 data class StudentDataModel(
     val id: String,

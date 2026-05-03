@@ -33,12 +33,6 @@ interface LessonDao {
     @Query("SELECT * FROM lessons WHERE start_time >= :start AND start_time <= :end ORDER BY start_time")
     fun observeLessonsBetween(start: Long, end: Long): Flow<List<LessonEntity>>
 
-    @Query("SELECT * FROM lessons WHERE sync_status = 'PENDING' OR sync_status = 'CONFLICT'")
-    suspend fun getPendingSyncLessons(): List<LessonEntity>
-
-    @Query("UPDATE lessons SET sync_status = 'SYNCED', updated_at = :remoteUpdatedAt WHERE id = :id")
-    suspend fun markAsSynced(id: String, remoteUpdatedAt: Long)
-
     @Query("SELECT * FROM lessons WHERE student_id = :studentId ORDER BY start_time DESC")
     suspend fun getLessonsByStudent(studentId: String): List<LessonEntity>
 

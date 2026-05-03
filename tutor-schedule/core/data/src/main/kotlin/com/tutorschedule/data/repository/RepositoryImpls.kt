@@ -7,12 +7,8 @@ import com.tutorschedule.common.TutorException
 import com.tutorschedule.common.TutorResult
 import com.tutorschedule.common.WeekRange
 import com.tutorschedule.data.datasource.LessonLocalDataSource
-import com.tutorschedule.data.datasource.LessonRemoteDataSource
 import com.tutorschedule.data.datasource.StudentLocalDataSource
-import com.tutorschedule.data.datasource.StudentRemoteDataSource
 import com.tutorschedule.data.datasource.TeacherLocalDataSource
-import com.tutorschedule.data.datasource.TeacherRemoteDataSource
-import com.tutorschedule.data.datasource.SyncChangesResult
 import com.tutorschedule.data.mapper.LessonMapper
 import com.tutorschedule.data.mapper.StudentMapper
 import com.tutorschedule.data.mapper.TeacherMapper
@@ -32,25 +28,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 课程仓储实现 — 本地优先策略 + 后台同步
+ * 课程仓储实现 — 纯本地策略
  */
 @Singleton
 class LessonRepositoryImpl @Inject constructor(
-    private val local: LessonLocalDataSource,
-    private val remote: LessonRemoteDataSource,
-    private val networkMonitor: NetworkMonitor,
-    private val syncEngine: SyncEngine
+    private val local: LessonLocalDataSource
 ) : LessonRepository {
 
     override suspend fun getLessonsForWeek(week: WeekRange): TutorResult<List<Lesson>> {
         return try {
             val localData = local.getLessonsBetween(week.start, week.end)
-            
-            // 后台触发同步（如果有网络）
-            if (networkMonitor.isOnline) {
-                syncEngine.requestSync(week)
-            }
-            
             TutorResult.Success(localData.map { LessonMapper.toDomain(it) })
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
@@ -71,17 +58,6 @@ class LessonRepositoryImpl @Inject constructor(
         return try {
             val dataModel = LessonMapper.toDataModel(lesson)
             local.insertLesson(dataModel)
-            
-            // 标记待同步，尝试立即推送
-            if (networkMonitor.isOnline) {
-                try {
-                    val remoteModel = remote.createLesson(dataModel)
-                    local.markAsSynced(lesson.id.value, remoteModel.updatedAtMillis)
-                } catch (_: Exception) {
-                    // 远程创建失败，保持 PENDING 状态，由 SyncEngine 稍后重试
-                }
-            }
-            
             TutorResult.Success(lesson)
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
@@ -92,15 +68,6 @@ class LessonRepositoryImpl @Inject constructor(
         return try {
             val dataModel = LessonMapper.toDataModel(lesson)
             local.updateLesson(dataModel)
-            
-            if (networkMonitor.isOnline) {
-                try {
-                    remote.updateLesson(lesson.id.value, dataModel)
-                } catch (_: Exception) {
-                    // 保持 PENDING
-                }
-            }
-            
             TutorResult.Success(lesson)
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
@@ -110,15 +77,6 @@ class LessonRepositoryImpl @Inject constructor(
     override suspend fun deleteLesson(id: LessonId): TutorResult<Unit> {
         return try {
             local.deleteLesson(id.value)
-            
-            if (networkMonitor.isOnline) {
-                try {
-                    remote.deleteLesson(id.value)
-                } catch (_: Exception) {
-                    // TODO: 标记为待删除，由 SyncEngine 处理
-                }
-            }
-            
             TutorResult.Success(Unit)
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
@@ -169,27 +127,17 @@ class LessonRepositoryImpl @Inject constructor(
 }
 
 /**
- * 学生仓储实现
+ * 学生仓储实现 — 纯本地
  */
 @Singleton
 class StudentRepositoryImpl @Inject constructor(
-    private val local: StudentLocalDataSource,
-    private val remote: StudentRemoteDataSource,
-    private val networkMonitor: NetworkMonitor
+    private val local: StudentLocalDataSource
 ) : StudentRepository {
 
     override suspend fun getStudents(): TutorResult<List<Student>> {
         return try {
             val localData = local.getAllStudents()
-            
-            if (networkMonitor.isOnline && localData.isEmpty()) {
-                // 冷启动拉取
-                val remoteData = remote.fetchAllStudents()
-                remoteData.forEach { local.insertStudent(it) }
-                TutorResult.Success(remoteData.map { StudentMapper.toDomain(it) })
-            } else {
-                TutorResult.Success(localData.map { StudentMapper.toDomain(it) })
-            }
+            TutorResult.Success(localData.map { StudentMapper.toDomain(it) })
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
         }
@@ -209,11 +157,6 @@ class StudentRepositoryImpl @Inject constructor(
         return try {
             val dataModel = StudentMapper.toDataModel(student)
             local.insertStudent(dataModel)
-            
-            if (networkMonitor.isOnline) {
-                try { remote.createStudent(dataModel) } catch (_: Exception) { }
-            }
-            
             TutorResult.Success(student)
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
@@ -224,11 +167,6 @@ class StudentRepositoryImpl @Inject constructor(
         return try {
             val dataModel = StudentMapper.toDataModel(student)
             local.updateStudent(dataModel)
-            
-            if (networkMonitor.isOnline) {
-                try { remote.updateStudent(student.id.value, dataModel) } catch (_: Exception) { }
-            }
-            
             TutorResult.Success(student)
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
@@ -238,11 +176,6 @@ class StudentRepositoryImpl @Inject constructor(
     override suspend fun deleteStudent(id: StudentId): TutorResult<Unit> {
         return try {
             local.deleteStudent(id.value)
-            
-            if (networkMonitor.isOnline) {
-                try { remote.deleteStudent(id.value) } catch (_: Exception) { }
-            }
-            
             TutorResult.Success(Unit)
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
@@ -270,26 +203,17 @@ class StudentRepositoryImpl @Inject constructor(
 }
 
 /**
- * 教师仓储实现
+ * 教师仓储实现 — 纯本地
  */
 @Singleton
 class TeacherRepositoryImpl @Inject constructor(
-    private val local: TeacherLocalDataSource,
-    private val remote: TeacherRemoteDataSource,
-    private val networkMonitor: NetworkMonitor
+    private val local: TeacherLocalDataSource
 ) : TeacherRepository {
 
     override suspend fun getTeachers(): TutorResult<List<Teacher>> {
         return try {
             val localData = local.getAllTeachers()
-            
-            if (networkMonitor.isOnline && localData.isEmpty()) {
-                val remoteData = remote.fetchAllTeachers()
-                // Teacher local 只有查询，没有写入（简化处理，实际应有 insert）
-                TutorResult.Success(remoteData.map { TeacherMapper.toDomain(it) })
-            } else {
-                TutorResult.Success(localData.map { TeacherMapper.toDomain(it) })
-            }
+            TutorResult.Success(localData.map { TeacherMapper.toDomain(it) })
         } catch (e: Exception) {
             TutorResult.Error(TutorException.DatabaseError(e))
         }
@@ -401,18 +325,4 @@ class ScheduleConflictChecker @Inject constructor() : ConflictChecker {
             .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
         return "${dt.hour.toString().padStart(2, '0')}:${dt.minute.toString().padStart(2, '0')}"
     }
-}
-
-/**
- * 网络状态监控接口（由 App 模块提供实现）
- */
-interface NetworkMonitor {
-    val isOnline: Boolean
-}
-
-/**
- * 同步引擎接口
- */
-interface SyncEngine {
-    suspend fun requestSync(week: WeekRange)
 }

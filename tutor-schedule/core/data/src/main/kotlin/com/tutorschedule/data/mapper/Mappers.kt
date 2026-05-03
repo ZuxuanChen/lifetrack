@@ -61,7 +61,7 @@ internal object LessonMapper {
             recurrenceJson = serializeRecurrence(domain.scheduleRule),
             roomId = domain.roomId?.value,
             statusCode = domain.status.name,
-            syncStatus = LessonDataModel.SyncStatus.PENDING,
+            // syncStatus removed — local-only app
             createdAtMillis = domain.createdAt.toEpochMilliseconds(),
             updatedAtMillis = domain.updatedAt.toEpochMilliseconds()
         )

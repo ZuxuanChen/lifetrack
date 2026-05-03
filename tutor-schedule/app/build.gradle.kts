@@ -36,13 +36,9 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
     implementation(project(":core:local"))
-    implementation(project(":core:remote"))
     implementation(project(":design-system"))
     implementation(project(":core-navigation"))
     implementation(project(":feature:schedule"))
-    implementation(project(":feature:student"))
-    implementation(project(":feature:teacher"))
-    implementation(project(":feature:settings"))
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
