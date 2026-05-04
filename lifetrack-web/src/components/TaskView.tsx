@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, type Task, type Goal } from '../db';
-import { Plus, X, CheckCircle2, Circle, Clock, ArrowRight, Filter, Repeat, Zap, ArrowUpDown } from 'lucide-react';
+import { Plus, X, CheckCircle2, Circle, Clock, ArrowRight, Filter, Repeat, Zap, ArrowUpDown, ArrowLeft } from 'lucide-react';
 
 type FilterStatus = 'all' | 'todo' | 'in_progress' | 'done';
 type SortOrder = 'default' | 'priorityDesc' | 'priorityAsc';
@@ -35,6 +35,11 @@ const SORT_LABELS: Record<SortOrder, string> = {
   priorityAsc: '优先级 ↑',
 };
 
+const COLORS = [
+  '#4A6FA5', '#FF6B6B', '#34C759', '#FF9500', '#AF52DE',
+  '#5856D6', '#FF2D55', '#5AC8FA', '#FFCC00', '#8E8E93'
+];
+
 export default function TaskView() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -49,6 +54,10 @@ export default function TaskView() {
   const [priority, setPriority] = useState(2);
   const [status, setStatus] = useState<Task['status']>('todo');
   const [scheduleType, setScheduleType] = useState<Task['scheduleType']>('single');
+  const [color, setColor] = useState(COLORS[0]);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     loadData();
@@ -71,6 +80,10 @@ export default function TaskView() {
       setPriority(task.priority);
       setStatus(task.status);
       setScheduleType(task.scheduleType);
+      setColor(task.color);
+      setIsRecurring(task.isRecurring);
+      setStartDate(task.startDate || '');
+      setEndDate(task.endDate || '');
     } else {
       setEditing(null);
       setTitle('');
@@ -78,6 +91,10 @@ export default function TaskView() {
       setPriority(2);
       setStatus('todo');
       setScheduleType('single');
+      setColor(COLORS[0]);
+      setIsRecurring(false);
+      setStartDate('');
+      setEndDate('');
     }
     setShowForm(true);
   }
@@ -92,9 +109,21 @@ export default function TaskView() {
       scheduleType,
       createdAt: editing?.createdAt || new Date().toISOString(),
       completedAt: status === 'done' ? (editing?.completedAt || new Date().toISOString()) : undefined,
+      color,
+      isRecurring,
+      startDate: isRecurring ? startDate || undefined : undefined,
+      endDate: isRecurring ? endDate || undefined : undefined,
     };
     if (editing?.id) {
       await db.tasks.update(editing.id, data);
+      // Sync color across all tasks with the same title
+      if (editing.color !== color) {
+        const all = await db.tasks.toArray();
+        const toUpdate = all.filter(t => t.id !== editing.id && t.title === editing.title && t.color !== color);
+        for (const t of toUpdate) {
+          await db.tasks.update(t.id!, { color });
+        }
+      }
     } else {
       await db.tasks.add(data);
     }
@@ -124,7 +153,6 @@ export default function TaskView() {
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (sortOrder === 'priorityDesc') return b.priority - a.priority;
     if (sortOrder === 'priorityAsc') return a.priority - b.priority;
-    // default: keep original order (newest first)
     return 0;
   });
 
@@ -139,7 +167,13 @@ export default function TaskView() {
     <div className="h-full flex flex-col">
       <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-lg font-bold">任务追踪</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
+                    className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+              <ArrowLeft size={18} />
+            </button>
+            <h1 className="text-lg font-bold">任务追踪</h1>
+          </div>
           <div className="flex gap-2">
             <button onClick={() => setShowFilter(!showFilter)} className="p-2 text-gray-500">
               <Filter size={18} />
@@ -206,8 +240,11 @@ export default function TaskView() {
               </button>
 
               <button onClick={() => openForm(task)} className="flex-1 text-left min-w-0">
-                <div className={`font-medium ${task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                  {task.title}
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.color }} />
+                  <div className={`font-medium ${task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                    {task.title}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[task.status]}`}>
@@ -216,9 +253,9 @@ export default function TaskView() {
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
                     {PRIORITY_LABELS[task.priority]}优先级
                   </span>
-                  {task.scheduleType === 'recurring' ? (
+                  {task.isRecurring ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 flex items-center gap-0.5">
-                      <Repeat size={10} /> 多次
+                      <Repeat size={10} /> 重复
                     </span>
                   ) : (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex items-center gap-0.5">
@@ -249,7 +286,7 @@ export default function TaskView() {
               <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400" /></button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto">
               <div>
                 <label className="text-sm text-gray-500">任务名称</label>
                 <input value={title} onChange={e => setTitle(e.target.value)}
@@ -303,6 +340,40 @@ export default function TaskView() {
                   >
                     <Repeat size={12} /> 多次（可反复用）
                   </button>
+                </div>
+              </div>
+
+              {/* Recurring options */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)}
+                         className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">每周重复</span>
+                </label>
+                {isRecurring && (
+                  <div className="flex gap-3 mt-2">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500">开始日期</label>
+                      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500">结束日期</label>
+                      <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">颜色</label>
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  {COLORS.map(c => (
+                    <button key={c} onClick={() => setColor(c)}
+                            className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-gray-800 scale-110' : 'border-transparent'}`}
+                            style={{ backgroundColor: c }} />
+                  ))}
                 </div>
               </div>
             </div>

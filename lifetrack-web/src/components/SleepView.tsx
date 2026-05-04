@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { db, type SleepRecord } from '../db';
-import { Plus, X, Moon, Star, TrendingUp } from 'lucide-react';
+import { Plus, X, Moon, Star, TrendingUp, ArrowLeft } from 'lucide-react';
 
 const QUALITY_LABELS: Record<number, string> = {
   1: '很差',
@@ -116,7 +116,13 @@ export default function SleepView() {
   return (
     <div className="h-full flex flex-col">
       <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200 flex items-center justify-between">
-        <h1 className="text-lg font-bold">睡眠记录</h1>
+        <div className="flex items-center gap-2">
+          <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
+                  className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+            <ArrowLeft size={18} />
+          </button>
+          <h1 className="text-lg font-bold">睡眠记录</h1>
+        </div>
         <button onClick={() => openForm()} className="bg-blue-600 text-white p-2 rounded-full shadow-sm">
           <Plus size={18} />
         </button>

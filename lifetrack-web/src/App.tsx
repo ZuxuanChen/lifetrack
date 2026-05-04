@@ -6,16 +6,26 @@ import ScheduleView from './components/ScheduleView';
 import GoalView from './components/GoalView';
 import TaskView from './components/TaskView';
 import SleepView from './components/SleepView';
+import HabitView from './components/HabitView';
+import StatsView from './components/StatsView';
 
-type Tab = 'dashboard' | 'schedule' | 'goal' | 'task' | 'sleep';
+type Tab = 'dashboard' | 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Initialize DB with demo data on first load
     seedData().then(() => setReady(true));
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent).detail as Tab;
+      if (tab) setActiveTab(tab);
+    };
+    window.addEventListener('navigate-tab', handler);
+    return () => window.removeEventListener('navigate-tab', handler);
   }, []);
 
   if (!ready) {
@@ -37,6 +47,8 @@ function App() {
         {activeTab === 'goal' && <GoalView />}
         {activeTab === 'task' && <TaskView />}
         {activeTab === 'sleep' && <SleepView />}
+        {activeTab === 'habit' && <HabitView />}
+        {activeTab === 'stats' && <StatsView />}
       </main>
       <BottomNav active={activeTab} onChange={setActiveTab} />
     </div>

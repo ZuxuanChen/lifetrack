@@ -1,24 +1,11 @@
 import { useState, useEffect } from 'react';
-import { db, type Goal, type Task, type Lesson, type SleepRecord } from '../db';
-import { Calendar, Target, ListTodo, Moon, ChevronRight, Clock, Star, Briefcase, CheckCircle2, Flame, Sparkles } from 'lucide-react';
+import { db, type Goal, type Task, type Lesson, type SleepRecord, type Habit, type HabitLog, type MoodEntry, todayLocal } from '../db';
+import { Calendar, Target, ListTodo, Moon, ChevronRight, Clock, Star, Briefcase, CheckCircle2, Flame, Palette, Dumbbell, BarChart3, Smile } from 'lucide-react';
 
 interface Props {
-  onNavigate: (tab: 'schedule' | 'task' | 'goal' | 'sleep') => void;
+  onNavigate: (tab: 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats') => void;
 }
 
-// 随机毒鸡汤 / 鼓励语
-const DAILY_QUOTES = [
-  '又活了一天，已经很厉害了 👍',
-  '今日人设：活着。明日人设：再说。',
-  '只要不学习，天天是放假 🎉',
-  '你努力的样子，真让人心疼 💔',
-  '完成一个任务 = 奖励自己摸鱼10分钟',
-  '别卷了，卷不动就躺，躺不平就侧着',
-  '今天的你，比昨天的你多活了一天 ✨',
-  '加油！距离退休又近了一天 🏖️',
-  '做不完就做不完，天又不会塌 🌤️',
-  '你已经很棒了，真的（此条5毛）',
-];
 
 // 简单的 SVG 饼图组件
 function PieChart({ data }: { data: { label: string; value: number; color: string }[] }) {
@@ -75,23 +62,40 @@ export default function DashboardView({ onNavigate }: Props) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [sleepRecords, setSleepRecords] = useState<SleepRecord[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
+  const [moodEntry, setMoodEntry] = useState<MoodEntry | null>(null);
+  const [showMoodForm, setShowMoodForm] = useState(false);
+  const [moodEmoji, setMoodEmoji] = useState('😊');
+  const [moodNote, setMoodNote] = useState('');
 
   useEffect(() => {
     loadData();
   }, []);
 
   async function loadData() {
-    const [g, t, l, s] = await Promise.all([
+    const [g, t, l, s, h, hl, m] = await Promise.all([
       db.goals.toArray(),
       db.tasks.toArray(),
       db.lessons.toArray(),
       db.sleepRecords.toArray(),
+      db.habits.toArray(),
+      db.habitLogs.toArray(),
+      db.moodEntries.toArray(),
     ]);
     setGoals(g);
     setTasks(t);
     setLessons(l);
     s.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setSleepRecords(s);
+    setHabits(h);
+    setHabitLogs(hl);
+    const todayMood = m.find(e => e.date === todayLocal());
+    setMoodEntry(todayMood || null);
+    if (todayMood) {
+      setMoodEmoji(todayMood.emoji);
+      setMoodNote(todayMood.note);
+    }
   }
 
   const today = new Date();
@@ -99,8 +103,26 @@ export default function DashboardView({ onNavigate }: Props) {
   const todayDateStr = `${today.getMonth() + 1}月${today.getDate()}日`;
   const weekDayLabel = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][todayDayOfWeek];
 
-  // Random quote based on date (stable for the day)
-  const dailyQuote = DAILY_QUOTES[today.getDate() % DAILY_QUOTES.length];
+  // Theme color picker
+  const THEME_COLORS = [
+    { name: '蓝', value: '#2563EB', bg: 'bg-blue-600' },
+    { name: '绿', value: '#16A34A', bg: 'bg-green-600' },
+    { name: '橙', value: '#EA580C', bg: 'bg-orange-600' },
+    { name: '紫', value: '#7C3AED', bg: 'bg-violet-600' },
+    { name: '粉', value: '#DB2777', bg: 'bg-pink-600' },
+    { name: '青', value: '#0891B2', bg: 'bg-cyan-600' },
+  ];
+  const [themeColor, setThemeColor] = useState(() => localStorage.getItem('lifetrack-theme') || '#2563EB');
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const applyTheme = (color: string) => {
+    setThemeColor(color);
+    localStorage.setItem('lifetrack-theme', color);
+    setShowColorPicker(false);
+  };
+
+  const themeBgStyle = { backgroundColor: themeColor };
+
 
   // Streak: consecutive days with completed tasks
   const streak = (() => {
@@ -121,9 +143,19 @@ export default function DashboardView({ onNavigate }: Props) {
     return count;
   })();
 
+  // Check if a lesson should appear on the given date
+  function lessonVisibleOnDate(lesson: Lesson, date: Date): boolean {
+    if (lesson.dayOfWeek !== date.getDay()) return false;
+    if (!lesson.isRecurring) return true;
+    const dateStr = date.toISOString().split('T')[0];
+    if (lesson.startDate && dateStr < lesson.startDate) return false;
+    if (lesson.endDate && dateStr > lesson.endDate) return false;
+    return true;
+  }
+
   // Today's lessons
   const todayLessons = lessons
-    .filter(l => l.dayOfWeek === todayDayOfWeek)
+    .filter(l => lessonVisibleOnDate(l, today))
     .sort((a, b) => a.startHour * 60 + a.startMinute - (b.startHour * 60 + b.startMinute));
 
   // Important tasks
@@ -144,7 +176,7 @@ export default function DashboardView({ onNavigate }: Props) {
   const recentSleep = sleepRecords.slice(0, 3);
 
   // === Workload Stats ===
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayLocal();
   const todayDoneTasks = tasks.filter(t => {
     if (t.status !== 'done' || !t.completedAt) return false;
     return t.completedAt.startsWith(todayStr);
@@ -158,6 +190,22 @@ export default function DashboardView({ onNavigate }: Props) {
   const tasksWithoutLessons = todayDoneTasks.filter(t => !lessons.some(l => l.taskId === t.id));
   const estimatedExtraMinutes = tasksWithoutLessons.length * 60;
   const totalWorkloadHours = ((todayWorkloadMinutes + estimatedExtraMinutes) / 60).toFixed(1);
+
+  const todayHabitLogs = habitLogs.filter(l => l.date === todayStr);
+  const habitDoneCount = todayHabitLogs.length;
+  const habitTotal = habits.length;
+
+  async function saveMood() {
+    const today = todayLocal();
+    const existing = await db.moodEntries.where('date').equals(today).first();
+    if (existing) {
+      await db.moodEntries.update(existing.id!, { emoji: moodEmoji, note: moodNote.trim() });
+    } else {
+      await db.moodEntries.add({ date: today, emoji: moodEmoji, note: moodNote.trim() });
+    }
+    setShowMoodForm(false);
+    loadData();
+  }
 
   // Pie chart data
   const pieData = todayDoneTasks
@@ -188,28 +236,81 @@ export default function DashboardView({ onNavigate }: Props) {
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
-      {/* Header with quote */}
-      <div className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 px-4 pt-5 pb-4 text-white">
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 border-b border-gray-100 text-white" style={themeBgStyle}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">总览</h1>
             <p className="text-sm text-white/70 mt-0.5">{todayDateStr} · {weekDayLabel}</p>
           </div>
-          {streak > 0 && (
-            <div className="flex items-center gap-1 bg-white/20 px-3 py-1.5 rounded-full">
-              <Flame size={16} className="text-yellow-300" />
-              <span className="text-sm font-bold">{streak}</span>
-              <span className="text-xs text-white/80">天连击</span>
+          <div className="flex items-center gap-2">
+            {streak > 0 && (
+              <div className="flex items-center gap-1 bg-white/20 px-3 py-1.5 rounded-full">
+                <Flame size={16} className="text-yellow-300" />
+                <span className="text-sm font-bold">{streak}</span>
+                <span className="text-xs text-white/80">天连击</span>
+              </div>
+            )}
+            <div className="relative">
+              <button onClick={() => setShowColorPicker(!showColorPicker)}
+                      className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+                <Palette size={16} />
+              </button>
+              {showColorPicker && (
+                <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-10 flex gap-1.5">
+                  {THEME_COLORS.map(c => (
+                    <button
+                      key={c.value}
+                      onClick={() => applyTheme(c.value)}
+                      className={`w-7 h-7 rounded-full border-2 ${themeColor === c.value ? 'border-gray-800 scale-110' : 'border-transparent'}`}
+                      style={{ backgroundColor: c.value }}
+                      title={c.name}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-        <p className="text-sm text-white/90 mt-3 italic flex items-center gap-1">
-          <Sparkles size={14} className="text-yellow-300" />
-          {dailyQuote}
-        </p>
       </div>
 
       <div className="p-4 space-y-3">
+        {/* Quick Entry Cards */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Habit Entry */}
+          <button onClick={() => onNavigate('habit')} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-left">
+            <div className="flex items-center justify-between mb-2">
+              <Dumbbell size={18} className="text-green-500" />
+              <span className="text-xs font-medium text-green-600">{habitDoneCount}/{habitTotal}</span>
+            </div>
+            <div className="text-sm font-semibold text-gray-900">习惯打卡</div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              {habitTotal === 0 ? '还没有习惯' : habitDoneCount >= habitTotal ? '今日全勤 🎉' : `还有 ${habitTotal - habitDoneCount} 个`}
+            </div>
+          </button>
+
+          {/* Mood Entry */}
+          <button onClick={() => setShowMoodForm(true)} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-left">
+            <div className="flex items-center justify-between mb-2">
+              <Smile size={18} className="text-yellow-500" />
+              <span className="text-xl">{moodEntry?.emoji || '—'}</span>
+            </div>
+            <div className="text-sm font-semibold text-gray-900">今日心情</div>
+            <div className="text-xs text-gray-400 mt-0.5 truncate">
+              {moodEntry ? moodEntry.note || '已记录' : '点我记录'}
+            </div>
+          </button>
+
+          {/* Stats Entry */}
+          <button onClick={() => onNavigate('stats')} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-left">
+            <div className="flex items-center justify-between mb-2">
+              <BarChart3 size={18} className="text-blue-500" />
+            </div>
+            <div className="text-sm font-semibold text-gray-900">数据回顾</div>
+            <div className="text-xs text-gray-400 mt-0.5">查看统计</div>
+          </button>
+        </div>
+
         {/* Workload Stats Card with Pie Chart */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-3">
@@ -391,6 +492,37 @@ export default function DashboardView({ onNavigate }: Props) {
             </div>
           )}
         </div>
+
+        {/* Mood Form Modal */}
+        {showMoodForm && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
+               onClick={() => setShowMoodForm(false)}>
+            <div className="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+                 onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold">今日心情</h2>
+                <button onClick={() => setShowMoodForm(false)}>
+                  <span className="text-gray-400 text-xl">&times;</span>
+                </button>
+              </div>
+              <div className="flex justify-center gap-3 mb-4">
+                {['😊', '🙂', '😐', '😟', '😫'].map(emoji => (
+                  <button key={emoji} onClick={() => setMoodEmoji(emoji)}
+                          className={`text-3xl p-2 rounded-xl transition-transform ${moodEmoji === emoji ? 'bg-yellow-100 scale-110' : 'hover:bg-gray-100'}`}>
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              <textarea value={moodNote} onChange={e => setMoodNote(e.target.value)}
+                        placeholder="写点什么...（可选）"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none h-20" />
+              <button onClick={saveMood}
+                      className="w-full mt-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium">
+                保存
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

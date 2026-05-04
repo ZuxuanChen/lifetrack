@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { db, type Lesson, type Task, type Goal } from '../db';
-import { Plus, X, ChevronLeft, ChevronRight, ListTodo, GripVertical } from 'lucide-react';
+import { db, type Lesson, type Task, type Goal, formatLocalDate } from '../db';
+import PomodoroTimer from './PomodoroTimer';
+import { Plus, X, ChevronLeft, ChevronRight, ListTodo, GripVertical, Calendar as CalendarIcon, LayoutGrid } from 'lucide-react';
 
 const DAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const MONTH_NAMES = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 const START_HOUR = 7;
 const END_HOUR = 23;
 const SLOT_HEIGHT = 48;
@@ -11,6 +13,20 @@ const COLORS = [
   '#4A6FA5', '#FF6B6B', '#34C759', '#FF9500', '#AF52DE',
   '#5856D6', '#FF2D55', '#5AC8FA', '#FFCC00', '#8E8E93'
 ];
+
+// Check if a lesson should appear on the given date
+function lessonVisibleOnDate(lesson: Lesson, date: Date): boolean {
+  if (lesson.dayOfWeek !== date.getDay()) return false;
+  const dateStr = formatLocalDate(date);
+  if (!lesson.isRecurring) {
+    // Non-recurring: only show on its specific date
+    return lesson.date === dateStr;
+  }
+  // Recurring: check date range
+  if (lesson.startDate && dateStr < lesson.startDate) return false;
+  if (lesson.endDate && dateStr > lesson.endDate) return false;
+  return true;
+}
 
 export default function ScheduleView() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -21,7 +37,11 @@ export default function ScheduleView() {
   const [showTaskScheduleForm, setShowTaskScheduleForm] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editing, setEditing] = useState<Lesson | null>(null);
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [showPomodoro, setShowPomodoro] = useState(false);
+  const [pomodoroLesson, setPomodoroLesson] = useState<Lesson | null>(null);
 
   const [title, setTitle] = useState('');
   const [dayOfWeek, setDayOfWeek] = useState(1);
@@ -30,6 +50,9 @@ export default function ScheduleView() {
   const [duration, setDuration] = useState(60);
   const [color, setColor] = useState(COLORS[0]);
   const [location, setLocation] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     loadLessons();
@@ -46,7 +69,6 @@ export default function ScheduleView() {
       db.tasks.toArray(),
       db.goals.toArray(),
     ]);
-    // Load ALL tasks so we can check done status for lessons
     setTasks(allTasks);
     setGoals(allGoals);
   }
@@ -57,6 +79,7 @@ export default function ScheduleView() {
     timeSlots.push(`${h}:30`);
   }
 
+  // Week view dates
   const weekDates = (() => {
     const today = new Date();
     const currentDay = today.getDay();
@@ -71,6 +94,17 @@ export default function ScheduleView() {
     return dates;
   })();
 
+  // Month view data
+  const monthDate = (() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + monthOffset);
+    return d;
+  })();
+  const monthYear = monthDate.getFullYear();
+  const monthIndex = monthDate.getMonth();
+  const daysInMonth = new Date(monthYear, monthIndex + 1, 0).getDate();
+  const firstDayOfMonth = new Date(monthYear, monthIndex, 1).getDay();
+
   function openForm(lesson?: Lesson) {
     if (lesson) {
       setEditing(lesson);
@@ -81,6 +115,9 @@ export default function ScheduleView() {
       setDuration(lesson.durationMinutes);
       setColor(lesson.color);
       setLocation(lesson.location || '');
+      setIsRecurring(lesson.isRecurring);
+      setStartDate(lesson.startDate || '');
+      setEndDate(lesson.endDate || '');
     } else {
       setEditing(null);
       setTitle('');
@@ -90,11 +127,21 @@ export default function ScheduleView() {
       setDuration(60);
       setColor(COLORS[0]);
       setLocation('');
+      setIsRecurring(false);
+      setStartDate('');
+      setEndDate('');
     }
     setShowForm(true);
   }
 
   async function saveLesson() {
+    // Compute specific date for non-recurring lessons based on current week view
+    let lessonDate: string | undefined;
+    if (!isRecurring && !editing) {
+      lessonDate = formatLocalDate(weekDates[dayOfWeek]);
+    } else if (!isRecurring && editing) {
+      lessonDate = editing.date || formatLocalDate(weekDates[dayOfWeek]);
+    }
     const data: Lesson = {
       id: editing?.id,
       title: title.trim() || '未命名',
@@ -104,9 +151,21 @@ export default function ScheduleView() {
       durationMinutes: duration,
       color,
       location: location.trim() || undefined,
+      isRecurring,
+      startDate: isRecurring ? startDate || undefined : undefined,
+      endDate: isRecurring ? endDate || undefined : undefined,
+      date: lessonDate,
     };
     if (editing?.id) {
       await db.lessons.update(editing.id, data);
+      // Sync color across all lessons with the same title
+      if (editing.color !== color) {
+        const all = await db.lessons.toArray();
+        const toUpdate = all.filter(l => l.id !== editing.id && l.title === editing.title && l.color !== color);
+        for (const l of toUpdate) {
+          await db.lessons.update(l.id!, { color });
+        }
+      }
     } else {
       await db.lessons.add(data);
     }
@@ -133,6 +192,9 @@ export default function ScheduleView() {
     const goal = goals.find(g => g.id === task.goalId);
     setColor(goal?.color || COLORS[0]);
     setLocation('');
+    setIsRecurring(false);
+    setStartDate('');
+    setEndDate('');
     setShowTaskPanel(false);
     setShowTaskScheduleForm(true);
   }
@@ -148,11 +210,10 @@ export default function ScheduleView() {
       durationMinutes: 60,
       color,
       location: location.trim() || undefined,
+      isRecurring: false,
+      date: formatLocalDate(weekDates[dayOfWeek]),
     };
     await db.lessons.add(data);
-
-    // Task stays in task list regardless of scheduleType
-
     setShowTaskScheduleForm(false);
     setSelectedTask(null);
     loadLessons();
@@ -179,7 +240,6 @@ export default function ScheduleView() {
     e.dataTransfer.setData('taskId', String(task.id));
     e.dataTransfer.setData('taskTitle', task.title);
     e.dataTransfer.setData('goalId', String(task.goalId || ''));
-    e.dataTransfer.setData('scheduleType', task.scheduleType);
     e.dataTransfer.effectAllowed = 'copy';
   }
 
@@ -203,11 +263,17 @@ export default function ScheduleView() {
     if (type === 'lesson') {
       const lessonId = Number(e.dataTransfer.getData('lessonId'));
       if (!lessonId) return;
-      await db.lessons.update(lessonId, {
+      const dragged = lessons.find(l => l.id === lessonId);
+      const update: Partial<Lesson> = {
         dayOfWeek: dayIdx,
         startHour: hour,
         startMinute: minute,
-      });
+      };
+      // For non-recurring lessons, update the specific date to match new position
+      if (dragged && !dragged.isRecurring) {
+        update.date = formatLocalDate(weekDates[dayIdx]);
+      }
+      await db.lessons.update(lessonId, update);
       loadLessons();
       return;
     }
@@ -226,6 +292,8 @@ export default function ScheduleView() {
         startMinute: minute,
         durationMinutes: 60,
         color: goal?.color || COLORS[0],
+        isRecurring: false,
+        date: formatLocalDate(weekDates[dayIdx]),
       });
 
       loadLessons();
@@ -241,9 +309,7 @@ export default function ScheduleView() {
     handleDropOnSlot(e, dayIdx, Math.max(0, Math.min(slotIdx, timeSlots.length - 1)));
   }
 
-  // Tasks for checking done status
   const allTasksRef = tasks;
-  // Task panel: hide single-use tasks that are already scheduled in a lesson
   const undoneTasks = tasks.filter(t => {
     if (t.status === 'done') return false;
     if (t.scheduleType === 'single') {
@@ -257,8 +323,19 @@ export default function ScheduleView() {
       {/* Header */}
       <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-lg font-bold">课程表</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
+                    className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+              <ChevronLeft size={18} />
+            </button>
+            <h1 className="text-lg font-bold">课程表</h1>
+          </div>
           <div className="flex gap-2">
+            <button onClick={() => setViewMode(viewMode === 'week' ? 'month' : 'week')}
+                    className="p-2 rounded-full shadow-sm bg-gray-100 text-gray-600"
+                    title={viewMode === 'week' ? '切换到月视图' : '切换到周视图'}>
+              {viewMode === 'week' ? <LayoutGrid size={18} /> : <CalendarIcon size={18} />}
+            </button>
             <button onClick={() => { setShowTaskPanel(!showTaskPanel); loadTasks(); }}
                     className={`p-2 rounded-full shadow-sm ${showTaskPanel ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'}`}>
               <ListTodo size={18} />
@@ -268,18 +345,33 @@ export default function ScheduleView() {
             </button>
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <button onClick={() => setWeekOffset(w => w - 1)} className="p-1 text-gray-500">
-            <ChevronLeft size={20} />
-          </button>
-          <span className="text-sm text-gray-600">
-            {weekDates[0].getMonth() + 1}月{weekDates[0].getDate()}日 -
-            {weekDates[6].getMonth() + 1}月{weekDates[6].getDate()}日
-          </span>
-          <button onClick={() => setWeekOffset(w => w + 1)} className="p-1 text-gray-500">
-            <ChevronRight size={20} />
-          </button>
-        </div>
+
+        {viewMode === 'week' ? (
+          <div className="flex items-center justify-between">
+            <button onClick={() => setWeekOffset(w => w - 1)} className="p-1 text-gray-500">
+              <ChevronLeft size={20} />
+            </button>
+            <span className="text-sm text-gray-600">
+              {weekDates[0].getMonth() + 1}月{weekDates[0].getDate()}日 -
+              {weekDates[6].getMonth() + 1}月{weekDates[6].getDate()}日
+            </span>
+            <button onClick={() => setWeekOffset(w => w + 1)} className="p-1 text-gray-500">
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <button onClick={() => setMonthOffset(m => m - 1)} className="p-1 text-gray-500">
+              <ChevronLeft size={20} />
+            </button>
+            <span className="text-sm text-gray-600 font-medium">
+              {monthYear}年 {MONTH_NAMES[monthIndex]}
+            </span>
+            <button onClick={() => setMonthOffset(m => m + 1)} className="p-1 text-gray-500">
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Task Panel */}
@@ -315,77 +407,141 @@ export default function ScheduleView() {
         </div>
       )}
 
-      {/* Day headers */}
-      <div className="flex bg-white border-b border-gray-200">
-        <div className="w-12 shrink-0" />
-        {DAYS.map((day, i) => (
-          <div key={day} className={`flex-1 text-center py-2 text-xs ${isToday(weekDates[i]) ? 'bg-blue-50' : ''}`}>
-            <div className="text-gray-500">{day}</div>
-            <div className={`font-semibold ${isToday(weekDates[i]) ? 'text-blue-600' : 'text-gray-800'}`}>
-              {weekDates[i].getDate()}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Schedule grid */}
-      <div className="flex-1 overflow-y-auto no-scrollbar relative bg-white">
-        <div className="flex min-h-max">
-          {/* Time labels */}
-          <div className="w-12 shrink-0 border-r border-gray-100 bg-gray-50">
-            {timeSlots.map((slot, i) => (
-              <div key={i} className="text-[10px] text-gray-400 text-right pr-1 flex items-start justify-end"
-                   style={{ height: SLOT_HEIGHT }}>
-                {slot.endsWith(':00') ? slot : ''}
+      {/* Week View */}
+      {viewMode === 'week' && (
+        <>
+          {/* Day headers */}
+          <div className="flex bg-white border-b border-gray-200">
+            <div className="w-12 shrink-0" />
+            {DAYS.map((day, i) => (
+              <div key={day} className={`flex-1 text-center py-2 text-xs ${isToday(weekDates[i]) ? 'bg-blue-50' : ''}`}>
+                <div className="text-gray-500">{day}</div>
+                <div className={`font-semibold ${isToday(weekDates[i]) ? 'text-blue-600' : 'text-gray-800'}`}>
+                  {weekDates[i].getDate()}
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Day columns */}
-          {DAYS.map((_, dayIdx) => (
-            <div key={dayIdx} className="flex-1 relative border-r border-gray-100 last:border-r-0"
-                 style={{ height: timeSlots.length * SLOT_HEIGHT }}
-                 onDragOver={handleDragOver}
-                 onDrop={(e) => handleDropOnDayColumn(e, dayIdx)}>
-              {/* Grid lines */}
-              {timeSlots.map((_, i) => (
-                <div key={i} className="border-b border-gray-50"
-                     style={{ height: SLOT_HEIGHT }} />
+          {/* Schedule grid */}
+          <div className="flex-1 overflow-y-auto no-scrollbar relative bg-white">
+            <div className="flex min-h-max">
+              {/* Time labels */}
+              <div className="w-12 shrink-0 border-r border-gray-100 bg-gray-50">
+                {timeSlots.map((slot, i) => (
+                  <div key={i} className="text-[10px] text-gray-400 text-right pr-1 flex items-start justify-end"
+                       style={{ height: SLOT_HEIGHT }}>
+                    {slot.endsWith(':00') ? slot : ''}
+                  </div>
+                ))}
+              </div>
+
+              {/* Day columns */}
+              {DAYS.map((_, dayIdx) => (
+                <div key={dayIdx} className="flex-1 relative border-r border-gray-100 last:border-r-0"
+                     style={{ height: timeSlots.length * SLOT_HEIGHT }}
+                     onDragOver={handleDragOver}
+                     onDrop={(e) => handleDropOnDayColumn(e, dayIdx)}>
+                  {/* Grid lines */}
+                  {timeSlots.map((_, i) => (
+                    <div key={i} className="border-b border-gray-50"
+                         style={{ height: SLOT_HEIGHT }} />
+                  ))}
+                  {/* Lessons filtered by date range */}
+                  {lessons.filter(l => lessonVisibleOnDate(l, weekDates[dayIdx])).map(lesson => {
+                    const style = getLessonStyle(lesson);
+                    const linkedTask = lesson.taskId ? allTasksRef.find(t => t.id === lesson.taskId) : undefined;
+                    const isDone = linkedTask?.status === 'done';
+                    return (
+                      <div
+                        key={lesson.id}
+                        draggable
+                        onDragStart={(e) => handleLessonDragStart(e, lesson)}
+                        onClick={() => openForm(lesson)}
+                        className={`absolute left-0.5 right-0.5 rounded-lg px-1.5 py-1 text-left text-xs text-white overflow-hidden shadow-sm cursor-grab active:cursor-grabbing ${
+                          isDone ? 'opacity-50' : ''
+                        }`}
+                        style={{
+                          top: style.top,
+                          height: style.height - 2,
+                          backgroundColor: lesson.color,
+                        }}
+                      >
+                        <div className={`font-semibold truncate ${isDone ? 'line-through' : ''}`}>{lesson.title}</div>
+                        {style.height > 30 && lesson.location && (
+                          <div className={`truncate opacity-80 ${isDone ? 'line-through' : ''}`}>{lesson.location}</div>
+                        )}
+                        {isDone && (
+                          <div className="absolute top-0.5 right-0.5 text-[8px] bg-white/30 px-1 rounded">✓ 已完成</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               ))}
-              {/* Lessons */}
-              {lessons.filter(l => l.dayOfWeek === dayIdx).map(lesson => {
-                const style = getLessonStyle(lesson);
-                const linkedTask = lesson.taskId ? allTasksRef.find(t => t.id === lesson.taskId) : undefined;
-                const isDone = linkedTask?.status === 'done';
-                return (
-                  <div
-                    key={lesson.id}
-                    draggable
-                    onDragStart={(e) => handleLessonDragStart(e, lesson)}
-                    onClick={() => openForm(lesson)}
-                    className={`absolute left-0.5 right-0.5 rounded-lg px-1.5 py-1 text-left text-xs text-white overflow-hidden shadow-sm cursor-grab active:cursor-grabbing ${
-                      isDone ? 'opacity-50' : ''
-                    }`}
-                    style={{
-                      top: style.top,
-                      height: style.height - 2,
-                      backgroundColor: lesson.color,
-                    }}
-                  >
-                    <div className={`font-semibold truncate ${isDone ? 'line-through' : ''}`}>{lesson.title}</div>
-                    {style.height > 30 && lesson.location && (
-                      <div className={`truncate opacity-80 ${isDone ? 'line-through' : ''}`}>{lesson.location}</div>
-                    )}
-                    {isDone && (
-                      <div className="absolute top-0.5 right-0.5 text-[8px] bg-white/30 px-1 rounded">✓ 已完成</div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Month View */}
+      {viewMode === 'month' && (
+        <div className="flex-1 overflow-y-auto bg-white p-3">
+          {/* Weekday headers */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {DAYS.map(d => (
+              <div key={d} className="text-center text-xs text-gray-400 py-1">{d}</div>
+            ))}
+          </div>
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {/* Empty cells before first day */}
+            {Array.from({ length: firstDayOfMonth }, (_, i) => (
+              <div key={`empty-${i}`} className="h-20" />
+            ))}
+            {/* Days */}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const dayNum = i + 1;
+              const date = new Date(monthYear, monthIndex, dayNum);
+              const isTodayDate = isToday(date);
+              const dayLessons = lessons.filter(l => lessonVisibleOnDate(l, date));
+              return (
+                <button
+                  key={dayNum}
+                  onClick={() => {
+                    // Switch to week view centered on this date
+                    const today = new Date();
+                    const diffDays = Math.floor((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    const weekDiff = Math.floor((diffDays + today.getDay()) / 7);
+                    setWeekOffset(weekDiff);
+                    setViewMode('week');
+                  }}
+                  className={`h-20 rounded-lg border p-1 text-left transition-colors ${
+                    isTodayDate ? 'border-blue-400 bg-blue-50' : 'border-gray-100 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className={`text-xs font-medium ${isTodayDate ? 'text-blue-600' : 'text-gray-700'}`}>
+                    {dayNum}
+                  </div>
+                  <div className="flex flex-wrap gap-0.5 mt-0.5">
+                    {dayLessons.slice(0, 4).map((lesson, idx) => (
+                      <div key={idx} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: lesson.color }} />
+                    ))}
+                    {dayLessons.length > 4 && (
+                      <span className="text-[8px] text-gray-400">+{dayLessons.length - 4}</span>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          ))}
+                  {dayLessons.length > 0 && (
+                    <div className="text-[9px] text-gray-400 truncate mt-0.5">
+                      {dayLessons[0].title}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Lesson Form Modal */}
       {showForm && (
@@ -446,6 +602,29 @@ export default function ScheduleView() {
                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
+              {/* Recurring option */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)}
+                         className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">每周重复</span>
+                </label>
+                {isRecurring && (
+                  <div className="flex gap-3 mt-2">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500">开始日期</label>
+                      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500">结束日期</label>
+                      <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="text-sm text-gray-500">颜色</label>
                 <div className="flex gap-2 mt-1 flex-wrap">
@@ -458,7 +637,21 @@ export default function ScheduleView() {
               </div>
             </div>
 
-            {/* 标记完成按钮（仅编辑模式下，且有关联任务且未完成） */}
+            {/* Start Pomodoro */}
+            {editing && (
+              <button
+                onClick={() => {
+                  setShowForm(false);
+                  setPomodoroLesson(editing);
+                  setShowPomodoro(true);
+                }}
+                className="w-full mt-4 py-3 rounded-xl bg-purple-600 text-white font-bold text-sm shadow-sm active:scale-[0.98] transition-transform"
+              >
+                ▶ 开始专注 25 分钟
+              </button>
+            )}
+
+            {/* Complete button */}
             {editing && editing.taskId && allTasksRef.find(t => t.id === editing.taskId)?.status !== 'done' && (
               <button
                 onClick={() => {
@@ -507,9 +700,6 @@ export default function ScheduleView() {
 
             <div className="bg-blue-50 rounded-lg p-3 mb-3 text-sm text-blue-800">
               任务: <strong>{selectedTask.title}</strong>
-              {selectedTask.scheduleType === 'single' && (
-                <span className="ml-2 text-xs text-orange-600">（单次任务，安排后将从列表移除）</span>
-              )}
             </div>
 
             <div className="space-y-3">
@@ -568,6 +758,17 @@ export default function ScheduleView() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Pomodoro Timer Overlay */}
+      {showPomodoro && pomodoroLesson && (
+        <PomodoroTimer
+          lesson={pomodoroLesson}
+          onClose={() => {
+            setShowPomodoro(false);
+            setPomodoroLesson(null);
+          }}
+        />
       )}
     </div>
   );
