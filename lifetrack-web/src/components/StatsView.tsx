@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db, type Task, type Lesson, type SleepRecord, type FocusSession, type MoodEntry, type Habit, type HabitLog, type BadgeUnlock, type Goal, formatLocalDate } from '../db';
-import { Trophy, Star, Zap, Sunrise, Moon, BedDouble, TrendingUp, Clock, CheckCircle2, Smile, ArrowLeft, Target } from 'lucide-react';
+import { Trophy, Star, Zap, Sunrise, Moon, BedDouble, TrendingUp, Clock, CheckCircle2, Smile, ArrowLeft, Target, Download } from 'lucide-react';
+import { generateCsv, downloadCsv } from '../utils/csvExport';
 
 const BADGE_DEFS = [
   { id: 'first-task', name: '初出茅庐', desc: '完成第一个任务', icon: Star, color: '#F59E0B' },
@@ -279,6 +280,42 @@ export default function StatsView() {
     );
   }
 
+  // CSV Export
+  function exportWorkloadCsv() {
+    const rows = last7Days.map(({ date, label }) => {
+      const dayLessons = lessons.filter(l => l.completedDates?.includes(date));
+      const lessonMinutes = dayLessons.reduce((s, l) => s + l.durationMinutes, 0);
+      const dayTasks = tasks.filter(t => t.status === 'done' && t.completedAt?.startsWith(date) && !lessons.some(l => l.taskId === t.id));
+      const extraMinutes = dayTasks.length * 60;
+      return {
+        日期: date,
+        标签: label,
+        课程时长分钟: lessonMinutes,
+        任务时长分钟: extraMinutes,
+        总时长分钟: lessonMinutes + extraMinutes,
+        总时长小时: ((lessonMinutes + extraMinutes) / 60).toFixed(2),
+      };
+    });
+    const csv = generateCsv(['日期', '标签', '课程时长分钟', '任务时长分钟', '总时长分钟', '总时长小时'], rows);
+    downloadCsv(`lifetrack-workload-${formatLocalDate(new Date())}.csv`, csv);
+  }
+
+  function exportTasksCsv() {
+    const rows = tasks.map(t => ({
+      ID: t.id,
+      标题: t.title,
+      状态: t.status,
+      优先级: t.priority,
+      类型: t.scheduleType,
+      是否重复: t.isRecurring ? '是' : '否',
+      截止日期: t.dueDate || '',
+      创建日期: t.createdAt.slice(0, 10),
+      完成日期: t.completedAt?.slice(0, 10) || '',
+    }));
+    const csv = generateCsv(['ID', '标题', '状态', '优先级', '类型', '是否重复', '截止日期', '创建日期', '完成日期'], rows);
+    downloadCsv(`lifetrack-tasks-${formatLocalDate(new Date())}.csv`, csv);
+  }
+
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
       {/* Header */}
@@ -293,7 +330,25 @@ export default function StatsView() {
         <p className="text-sm text-gray-400 mt-0.5">看看这段时间的进步 📈</p>
       </div>
 
+      </div>
+
       <div className="p-4 space-y-4">
+        {/* Export buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={exportWorkloadCsv}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Download size={14} /> 导出工作量 CSV
+          </button>
+          <button
+            onClick={exportTasksCsv}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Download size={14} /> 导出任务 CSV
+          </button>
+        </div>
+
         {/* New badges toast */}
         {newBadges.length > 0 && (
           <div className="bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-200 rounded-xl p-3 flex items-center gap-3">
