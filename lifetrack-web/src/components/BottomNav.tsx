@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Target, ListTodo, Moon, LayoutDashboard, Dumbbell, BarChart3, MoreHorizontal, X, Settings } from 'lucide-react';
+import { Calendar, Target, ListTodo, Moon, LayoutDashboard, Dumbbell, BarChart3, MoreHorizontal, X, Settings, Bot } from 'lucide-react';
 
-type Tab = 'dashboard' | 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats' | 'settings';
+type Tab = 'dashboard' | 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats' | 'settings' | 'ai';
 
 interface Props {
   active: Tab;
@@ -17,9 +17,10 @@ const ALL_TAB_CONFIG: Record<Tab, { label: string; icon: typeof Calendar }> = {
   habit: { label: '习惯', icon: Dumbbell },
   stats: { label: '数据', icon: BarChart3 },
   settings: { label: '设置', icon: Settings },
+  ai: { label: 'AI', icon: Bot },
 };
 
-const ALL_OPTIONS: Tab[] = ['task', 'habit', 'goal', 'sleep', 'stats', 'schedule', 'dashboard', 'settings'];
+const ALL_OPTIONS: Tab[] = ['task', 'habit', 'goal', 'sleep', 'stats', 'schedule', 'dashboard', 'settings', 'ai'];
 
 function getSlot(key: string, fallback: string): Tab {
   const val = localStorage.getItem(key);

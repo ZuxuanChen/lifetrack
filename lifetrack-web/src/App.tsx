@@ -11,11 +11,12 @@ import StatsView from './components/StatsView';
 import SettingsView from './components/SettingsView';
 import ErrorBoundary from './components/ErrorBoundary';
 import SearchOverlay from './components/SearchOverlay';
+import AIChatView from './components/AIChatView';
 import { ThemeProvider } from './components/ThemeProvider';
 
-type Tab = 'dashboard' | 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats' | 'settings';
+type Tab = 'dashboard' | 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats' | 'settings' | 'ai';
 
-const TAB_ORDER: Tab[] = ['dashboard', 'schedule', 'task', 'goal', 'sleep', 'habit', 'stats', 'settings'];
+const TAB_ORDER: Tab[] = ['dashboard', 'schedule', 'task', 'goal', 'sleep', 'habit', 'stats', 'settings', 'ai'];
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -78,6 +79,7 @@ function App() {
           {activeTab === 'habit' && <HabitView />}
           {activeTab === 'stats' && <StatsView />}
           {activeTab === 'settings' && <SettingsView />}
+          {activeTab === 'ai' && <AIChatView onBack={() => setActiveTab('dashboard')} />}
         </main>
         <BottomNav active={activeTab} onChange={setActiveTab} />
 

@@ -1,3 +1,20 @@
+## v1.4.0 — 本地 AI 助手（Ollama 集成）
+- **Feature**: 集成本地 Ollama AI，增加趣味性
+  - 新增 `ollama.ts` 工具模块：调用本地 `http://localhost:11434` API
+    - `generateWithOllama()` — 向指定模型发送 prompt，支持超时控制
+    - `listOllamaModels()` — 列出本地可用模型
+    - `checkOllamaHealth()` — 检测 Ollama 服务是否在线
+    - 网络错误自动转换为中文提示
+  - 新增 `AIChatView` 组件：类聊天界面
+    - 气泡消息（用户蓝色 / AI 灰色），显示发送时间
+    - 顶部状态栏：在线/离线指示 + 模型选择器
+    - 初始界面提供 4 个快捷建议问题
+    - 输入框支持 Enter 发送，离线时自动禁用
+    - 底部提示「由本地 Ollama 驱动，数据不会离开您的设备」
+  - `App.tsx` 新增 `ai` Tab，`BottomNav` 新增 AI 入口
+  - 快捷键保持 Ctrl+1~8 不变，AI 通过导航进入
+
+,
 ## v1.3.0 — Excel 导入支持
 - **Feature**: 支持从 Excel (.xlsx/.xls) 文件导入数据
   - 新增 `excel-import.ts` 工具模块：使用 `xlsx` 库解析 Excel 文件
