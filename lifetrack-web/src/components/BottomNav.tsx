@@ -73,7 +73,7 @@ export default function BottomNav({ active, onChange }: Props) {
           className={`relative -top-3 flex flex-col items-center justify-center w-16 h-16 rounded-2xl shadow-lg transition-all ${
             isActive
               ? 'bg-white text-blue-600 scale-110'
-              : 'bg-white text-gray-500 border border-gray-200'
+              : 'bg-white text-gray-500 dark:text-gray-400 border border-gray-200'
           }`}
         >
           <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />

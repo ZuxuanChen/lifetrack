@@ -14,7 +14,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  todo: 'bg-gray-100 text-gray-600',
+  todo: 'bg-gray-100 dark:bg-gray-700 text-gray-600',
   in_progress: 'bg-blue-100 text-blue-600',
   done: 'bg-green-100 text-green-600',
 };
@@ -26,7 +26,7 @@ const PRIORITY_LABELS: Record<number, string> = {
 };
 
 const PRIORITY_COLORS: Record<number, string> = {
-  1: 'bg-gray-100 text-gray-500',
+  1: 'bg-gray-100 dark:bg-gray-700 text-gray-500',
   2: 'bg-orange-100 text-orange-600',
   3: 'bg-red-100 text-red-600',
 };
@@ -60,6 +60,8 @@ export default function TaskView() {
   const [endDate, setEndDate] = useState('');
   const [dueDate, setDueDate] = useState(''); // NEW: due date
   const [description, setDescription] = useState(''); // NEW: task description
+  const [repeatCount, setRepeatCount] = useState<number | ''>(''); // NEW: repeat count for recurring tasks
+  const [durationMinutes, setDurationMinutes] = useState(60); // NEW: default duration for scheduling
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
@@ -93,6 +95,8 @@ export default function TaskView() {
       setEndDate(task.endDate || '');
       setDueDate(task.dueDate || '');
       setDescription(task.description || '');
+      setRepeatCount(task.repeatCount ?? '');
+      setDurationMinutes(task.durationMinutes ?? 60);
     } else {
       setEditing(null);
       setTitle('');
@@ -106,6 +110,8 @@ export default function TaskView() {
       setEndDate('');
       setDueDate('');
       setDescription('');
+      setRepeatCount('');
+      setDurationMinutes(60);
     }
     setShowForm(true);
   }
@@ -136,6 +142,8 @@ export default function TaskView() {
       isRecurring,
       startDate: isRecurring ? startDate || undefined : undefined,
       endDate: isRecurring ? endDate || undefined : undefined,
+      repeatCount: scheduleType === 'recurring' && repeatCount !== '' ? Number(repeatCount) : undefined,
+      durationMinutes,
     };
     if (editing?.id) {
       await db.tasks.update(editing.id, data);
@@ -252,11 +260,11 @@ export default function TaskView() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 px-4 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700 ">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
-                    className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                    className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200">
               <ArrowLeft size={18} />
             </button>
             <h1 className="text-lg font-bold">任务追踪</h1>
@@ -272,12 +280,12 @@ export default function TaskView() {
                 }
               }}
               className={`p-2 rounded-full text-sm font-medium transition-colors ${
-                batchMode ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'
+                batchMode ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100'
               }`}
             >
               {batchMode ? '完成' : '批量'}
             </button>
-            <button onClick={() => setShowFilter(!showFilter)} className="p-2 text-gray-500">
+            <button onClick={() => setShowFilter(!showFilter)} className="p-2 text-gray-500 dark:text-gray-400 ">
               <Filter size={18} />
             </button>
             <button onClick={() => openForm()} className="bg-blue-600 text-white p-2 rounded-full shadow-sm">
@@ -287,11 +295,11 @@ export default function TaskView() {
         </div>
 
         {/* Stats */}
-        <div className="flex gap-3 text-xs text-gray-500 mb-1">
+        <div className="flex gap-3 text-xs text-gray-500 dark:text-gray-400 mb-1">
           <span>总: {stats.total}</span>
           <span className="text-green-600">已完成: {stats.done}</span>
           <span className="text-blue-600">进行中: {stats.inProgress}</span>
-          <span className="text-gray-400">待办: {stats.todo}</span>
+          <span className="text-gray-400 dark:text-gray-500 ">待办: {stats.todo}</span>
         </div>
 
         {/* Filter & Sort chips */}
@@ -302,7 +310,7 @@ export default function TaskView() {
               <select
                 value={goalFilter}
                 onChange={(e) => setGoalFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                className="px-2 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="px-2 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
               >
                 <option value="all">全部目标</option>
                 {goals.map(g => (
@@ -313,7 +321,7 @@ export default function TaskView() {
             {(['all', 'todo', 'in_progress', 'done', 'overdue'] as FilterStatus[]).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        filter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                        filter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600'
                       }`}>
                 {STATUS_LABELS[f]}
               </button>
@@ -333,7 +341,7 @@ export default function TaskView() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {sortedTasks.length === 0 && (
-          <div className="text-center text-gray-400 mt-20">
+          <div className="text-center text-gray-400 dark:text-gray-500 mt-20">
             <CheckCircle2 size={48} className="mx-auto mb-3 opacity-40" />
             <p>没有任务</p>
           </div>
@@ -349,7 +357,7 @@ export default function TaskView() {
           };
           return (
             <div key={task.id}
-                 className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-start gap-3 ${task.status === 'done' ? 'opacity-60' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
+                 className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex items-start gap-3 ${task.status === 'done' ? 'opacity-60' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
                  style={{ borderLeftWidth: '3px', borderLeftColor: PRIORITY_BAR_COLORS[task.priority] || '#9CA3AF' }}>
               {batchMode ? (
                 <button
@@ -388,7 +396,7 @@ export default function TaskView() {
                   </div>
                 </div>
                 {task.description && (
-                  <div className="text-xs text-gray-400 mt-1 line-clamp-2">{task.description}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                 )}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[task.status]}`}>
@@ -397,18 +405,19 @@ export default function TaskView() {
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[task.priority]}`}>
                     {PRIORITY_LABELS[task.priority]}优先级
                   </span>
-                  {task.isRecurring ? (
+                  {task.scheduleType === 'recurring' ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 flex items-center gap-0.5">
-                      <Repeat size={10} /> 重复
+                      <Repeat size={10} />
+                      {task.repeatCount !== undefined ? `剩 ${task.repeatCount} 次` : '多次'}
                     </span>
                   ) : (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex items-center gap-0.5">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 flex items-center gap-0.5">
                       <Zap size={10} /> 单次
                     </span>
                   )}
                   {task.dueDate && (
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5 ${
-                      task.status === 'done' ? 'bg-gray-100 text-gray-400' :
+                      task.status === 'done' ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' :
                       new Date(task.dueDate) < new Date(new Date().toISOString().split('T')[0]) ? 'bg-red-100 text-red-600' :
                       task.dueDate === new Date().toISOString().split('T')[0] ? 'bg-orange-100 text-orange-600' :
                       'bg-blue-100 text-blue-600'
@@ -418,7 +427,7 @@ export default function TaskView() {
                     </span>
                   )}
                   {goal && (
-                    <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5">
                       <ArrowRight size={10} />
                       {goal.title}
                     </span>
@@ -432,16 +441,16 @@ export default function TaskView() {
 
       {/* Batch action bar */}
       {batchMode && selectedIds.size > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-40 bg-white rounded-xl shadow-lg border border-gray-200 p-3 flex items-center justify-between"
+        <div className="fixed bottom-4 left-4 right-4 z-40 bg-white rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 flex items-center justify-between"
              style={{ maxWidth: '500px', margin: '0 auto' }}>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">已选 {selectedIds.size} 项</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ">已选 {selectedIds.size} 项</span>
           </div>
           <div className="flex gap-2">
-            <button onClick={selectAll} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+            <button onClick={selectAll} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200">
               全选
             </button>
-            <button onClick={clearSelection} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+            <button onClick={clearSelection} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200">
               清空
             </button>
             <button onClick={() => setShowBatchGoalForm(true)} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700">
@@ -461,17 +470,17 @@ export default function TaskView() {
       {showBatchGoalForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
              onClick={() => setShowBatchGoalForm(false)}>
-          <div className="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
                onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">分配目标（已选 {selectedIds.size} 项）</h2>
-              <button onClick={() => setShowBatchGoalForm(false)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => setShowBatchGoalForm(false)}><X size={20} className="text-gray-400 dark:text-gray-500 " /></button>
             </div>
             <div className="space-y-3">
               <select
                 value={batchGoalId || ''}
                 onChange={e => setBatchGoalId(e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">选择目标...</option>
                 {goals.map(g => (
@@ -481,7 +490,7 @@ export default function TaskView() {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => setShowBatchGoalForm(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium"
+                  className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium"
                 >
                   取消
                 </button>
@@ -502,35 +511,35 @@ export default function TaskView() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
              onClick={() => setShowForm(false)}>
-          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
                onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">{editing ? '编辑任务' : '添加任务'}</h2>
-              <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400 dark:text-gray-500 " /></button>
             </div>
 
             <div className="space-y-3 max-h-[50vh] overflow-y-auto">
               <div>
-                <label className="text-sm text-gray-500">任务名称</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">任务名称</label>
                 <input value={title} onChange={e => setTitle(e.target.value)}
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">备注（可选）</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">备注（可选）</label>
                 <textarea
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   rows={3}
                   placeholder="添加任务详情、步骤、参考链接..."
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
                 />
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">关联目标（可选）</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">关联目标（可选）</label>
                 <select value={goalId || ''} onChange={e => setGoalId(e.target.value ? Number(e.target.value) : undefined)}
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">无</option>
                   {goals.map(g => {
                     const goalTasks = tasks.filter(t => t.goalId === g.id);
@@ -541,20 +550,20 @@ export default function TaskView() {
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">优先级</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">优先级</label>
                 <select value={priority} onChange={e => setPriority(Number(e.target.value))}
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg">
+                        className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
                   {[3, 2, 1].map(p => <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">排课类型</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">排课类型</label>
                 <div className="flex gap-2 mt-1">
                   <button
                     onClick={() => setScheduleType('single')}
                     className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
-                      scheduleType === 'single' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                      scheduleType === 'single' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600'
                     }`}
                   >
                     <Zap size={12} /> 单次（用完消失）
@@ -562,32 +571,62 @@ export default function TaskView() {
                   <button
                     onClick={() => setScheduleType('recurring')}
                     className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
-                      scheduleType === 'recurring' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                      scheduleType === 'recurring' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600'
                     }`}
                   >
                     <Repeat size={12} /> 多次（可反复用）
                   </button>
                 </div>
+                {scheduleType === 'recurring' && (
+                  <div className="mt-2">
+                    <label className="text-xs text-gray-500 dark:text-gray-400 ">可用次数（留空表示无限次）</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={repeatCount}
+                      onChange={e => {
+                        const v = e.target.value;
+                        setRepeatCount(v === '' ? '' : Math.max(1, Number(v)));
+                      }}
+                      placeholder="无限次"
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Default Duration */}
+              <div>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">预计时长（分钟）</label>
+                <select
+                  value={durationMinutes}
+                  onChange={e => setDurationMinutes(Number(e.target.value))}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+                >
+                  {[30, 45, 60, 90, 120, 150, 180].map(m =>
+                    <option key={m} value={m}>{m}分钟</option>
+                  )}
+                </select>
               </div>
 
               {/* Recurring options */}
-              <div className="bg-gray-50 rounded-lg p-3">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)}
-                         className="w-4 h-4 rounded border-gray-300 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">每周重复</span>
+                         className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ">每周重复</span>
                 </label>
                 {isRecurring && (
                   <div className="flex gap-3 mt-2">
                     <div className="flex-1">
-                      <label className="text-xs text-gray-500">开始日期</label>
+                      <label className="text-xs text-gray-500 dark:text-gray-400 ">开始日期</label>
                       <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm" />
                     </div>
                     <div className="flex-1">
-                      <label className="text-xs text-gray-500">结束日期</label>
+                      <label className="text-xs text-gray-500 dark:text-gray-400 ">结束日期</label>
                       <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                             className="w-full mt-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm" />
                     </div>
                   </div>
                 )}
@@ -595,16 +634,16 @@ export default function TaskView() {
 
               {/* Due Date */}
               <div>
-                <label className="text-sm text-gray-500">截止日期（可选）</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">截止日期（可选）</label>
                 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 {dueDate && new Date(dueDate) < new Date(new Date().toISOString().split('T')[0]) && (
                   <p className="text-xs text-red-500 mt-1">⚠️ 截止日期已过</p>
                 )}
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">颜色</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">颜色</label>
                 <div className="flex gap-2 mt-1 flex-wrap">
                   {COLORS.map(c => (
                     <button key={c} onClick={() => setColor(c)}

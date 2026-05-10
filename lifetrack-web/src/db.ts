@@ -41,6 +41,8 @@ export interface Task {
   scheduledStartHour?: number;
   scheduledStartMinute?: number;
   scheduledDurationMinutes?: number;
+  repeatCount?: number; // for recurring tasks: remaining uses, undefined = unlimited
+  durationMinutes?: number; // default duration when scheduling onto calendar
 }
 
 export interface Lesson {

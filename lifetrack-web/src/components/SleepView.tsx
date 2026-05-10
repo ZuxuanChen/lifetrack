@@ -128,10 +128,10 @@ export default function SleepView() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 px-4 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
-                  className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200">
             <ArrowLeft size={18} />
           </button>
           <h1 className="text-lg font-bold">睡眠记录</h1>
@@ -143,21 +143,21 @@ export default function SleepView() {
 
       {/* Stats Cards */}
       <div className="flex gap-3 px-4 py-3">
-        <div className="flex-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-1.5 text-gray-400 text-xs mb-1">
+        <div className="flex-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 ">
+          <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 text-xs mb-1">
             <TrendingUp size={12} />
             <span>平均睡眠</span>
           </div>
-          <div className="text-lg font-bold text-gray-900">
+          <div className="text-lg font-bold text-gray-900 dark:text-gray-100 ">
             {records.length > 0 ? formatDuration(avgSleep) : '--'}
           </div>
         </div>
-        <div className="flex-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-1.5 text-gray-400 text-xs mb-1">
+        <div className="flex-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 ">
+          <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 text-xs mb-1">
             <Star size={12} />
             <span>平均质量</span>
           </div>
-          <div className="text-lg font-bold text-gray-900">
+          <div className="text-lg font-bold text-gray-900 dark:text-gray-100 ">
             {records.length > 0 ? `${avgQuality} / 5` : '--'}
           </div>
         </div>
@@ -165,8 +165,8 @@ export default function SleepView() {
 
       {/* Sleep Trend Chart */}
       {sleepTrend.length > 1 && (
-        <div className="mx-4 mb-3 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-          <div className="text-xs text-gray-400 mb-2">近7天睡眠趋势</div>
+        <div className="mx-4 mb-3 bg-white rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 ">
+          <div className="text-xs text-gray-400 dark:text-gray-500 mb-2">近7天睡眠趋势</div>
           <div className="flex items-end gap-2 h-24">
             {sleepTrend.map((s, i) => {
               const h = maxDuration > 0 ? (s.duration / maxDuration) * 80 : 0;
@@ -174,13 +174,13 @@ export default function SleepView() {
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <div className="w-full flex flex-col items-center justify-end">
-                    <span className="text-[9px] text-gray-500">{Math.round(s.duration / 60)}h</span>
+                    <span className="text-[9px] text-gray-500 dark:text-gray-400 ">{Math.round(s.duration / 60)}h</span>
                     <div
                       className="w-full rounded-t-md min-h-[4px]"
                       style={{ height: `${Math.max(h, 4)}px`, backgroundColor: barColor, opacity: 0.7 + (s.quality / 10) }}
                     />
                   </div>
-                  <span className="text-[9px] text-gray-400">{s.date}</span>
+                  <span className="text-[9px] text-gray-400 dark:text-gray-500 ">{s.date}</span>
                 </div>
               );
             })}
@@ -190,7 +190,7 @@ export default function SleepView() {
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
         {records.length === 0 && (
-          <div className="text-center text-gray-400 mt-10">
+          <div className="text-center text-gray-400 dark:text-gray-500 mt-10">
             <Moon size={48} className="mx-auto mb-3 opacity-40" />
             <p>还没有睡眠记录</p>
           </div>
@@ -201,16 +201,16 @@ export default function SleepView() {
           const dateObj = new Date(record.date);
           return (
             <button key={record.id} onClick={() => openForm(record)}
-                    className="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-left">
+                    className="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-left">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-gray-900 dark:text-gray-100 ">
                     {dateObj.getMonth() + 1}月{dateObj.getDate()}日
-                    <span className="text-xs text-gray-400 ml-1">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
                       周{'日一二三四五六'[dateObj.getDay()]}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {record.bedTime} → {record.wakeTime}
                     <span className="text-blue-600 font-medium ml-2">{formatDuration(duration)}</span>
                   </div>
@@ -227,7 +227,7 @@ export default function SleepView() {
                 </div>
               </div>
               {record.note && (
-                <p className="text-xs text-gray-400 mt-2">{record.note}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">{record.note}</p>
               )}
             </button>
           );
@@ -238,40 +238,40 @@ export default function SleepView() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
              onClick={() => setShowForm(false)}>
-          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
                onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">{editing ? '编辑记录' : '添加记录'}</h2>
-              <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400 dark:text-gray-500 " /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-sm text-gray-500">日期</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">日期</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="text-sm text-gray-500">入睡时间</label>
+                  <label className="text-sm text-gray-500 dark:text-gray-400 ">入睡时间</label>
                   <input type="time" value={bedTime} onChange={e => setBedTime(e.target.value)}
-                         className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                         className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div className="flex-1">
-                  <label className="text-sm text-gray-500">起床时间</label>
+                  <label className="text-sm text-gray-500 dark:text-gray-400 ">起床时间</label>
                   <input type="time" value={wakeTime} onChange={e => setWakeTime(e.target.value)}
-                         className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                         className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">睡眠质量</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">睡眠质量</label>
                 <div className="flex gap-2 mt-1">
                   {[1, 2, 3, 4, 5].map(q => (
                     <button key={q} onClick={() => setQuality(q)}
                             className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                              quality === q ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                              quality === q ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600'
                             }`}>
                       {QUALITY_LABELS[q]}
                     </button>
@@ -280,10 +280,10 @@ export default function SleepView() {
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">备注（可选）</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">备注（可选）</label>
                 <input value={note} onChange={e => setNote(e.target.value)}
                        placeholder="比如：喝了咖啡、看了书..."
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
               {date && bedTime && wakeTime && (

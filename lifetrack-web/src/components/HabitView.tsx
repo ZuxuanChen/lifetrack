@@ -167,11 +167,11 @@ export default function HabitView() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 px-4 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700 ">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
-                    className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                    className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200">
               <ArrowLeft size={18} />
             </button>
             <h1 className="text-lg font-bold">习惯打卡</h1>
@@ -186,7 +186,7 @@ export default function HabitView() {
       <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
         {habits.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-gray-400 text-sm">还没有习惯，先立一个小目标吧 🎯</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">还没有习惯，先立一个小目标吧 🎯</p>
           </div>
         )}
 
@@ -194,7 +194,7 @@ export default function HabitView() {
           const loggedToday = isLogged(habit.id!, today);
           const streak = calcStreak(habit.id!);
           return (
-            <div key={habit.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div key={habit.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
@@ -202,8 +202,8 @@ export default function HabitView() {
                     {habit.icon}
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">{habit.name}</div>
-                    <div className="text-xs text-gray-400 flex items-center gap-2">
+                    <div className="font-semibold text-gray-900 dark:text-gray-100 ">{habit.name}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-2">
                       <span>{days.filter(d => isLogged(habit.id!, d.date)).length} / 30 天</span>
                       {streak > 0 && (
                         <span className="text-orange-500 font-medium">🔥 {streak} 天连续</span>
@@ -217,7 +217,7 @@ export default function HabitView() {
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                       loggedToday
                         ? 'text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
                     }`}
                     style={loggedToday ? { backgroundColor: habit.color } : undefined}
                   >
@@ -231,7 +231,7 @@ export default function HabitView() {
 
               {/* Heatmap - 7-day week layout */}
               <div className="mt-2">
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1 max-w-xs">
                   {weeks.map((week, wi) =>
                     week.map((day, di) => {
                       const logged = isLogged(habit.id!, day.date);
@@ -245,7 +245,7 @@ export default function HabitView() {
                           className="flex flex-col items-center"
                         >
                           <div
-                            className={`w-full aspect-square rounded-sm transition-all hover:scale-110 ${isToday ? 'ring-2 ring-offset-1' : ''}`}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-sm transition-all hover:scale-110 ${isToday ? 'ring-2 ring-offset-1' : ''}`}
                             style={{
                               backgroundColor: logged ? `${habit.color}${intensity}` : '#f3f4f6',
                               boxShadow: isToday ? `0 0 0 2px white, 0 0 0 4px ${habit.color}` : undefined,
@@ -256,7 +256,7 @@ export default function HabitView() {
                     })
                   )}
                 </div>
-                <div className="flex justify-between text-[9px] text-gray-400 mt-1 px-0.5">
+                <div className="grid grid-cols-7 gap-1 max-w-xs text-center text-[9px] text-gray-400 dark:text-gray-500 mt-1">
                   {['一','二','三','四','五','六','日'].map(d => <span key={d}>{d}</span>)}
                 </div>
               </div>
@@ -269,27 +269,27 @@ export default function HabitView() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
              onClick={() => setShowForm(false)}>
-          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto"
                onClick={e => e.stopPropagation()}>
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">添加习惯</h2>
-                <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400" /></button>
+                <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400 dark:text-gray-500 " /></button>
               </div>
               <div className="space-y-3">
               <div>
-                <label className="text-sm text-gray-500">习惯名称</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">习惯名称</label>
                 <input value={newName} onChange={e => setNewName(e.target.value)}
                        placeholder="比如：早起、喝水、阅读"
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="text-sm text-gray-500">图标（emoji）</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">图标（emoji）</label>
                 <input value={newIcon} onChange={e => setNewIcon(e.target.value.slice(0, 2))}
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl" />
               </div>
               <div>
-                <label className="text-sm text-gray-500">颜色</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">颜色</label>
                 <div className="flex gap-2 mt-1 flex-wrap">
                   {COLORS.map(c => (
                     <button key={c} onClick={() => setNewColor(c)}

@@ -50,8 +50,8 @@ function PieChart({ data }: { data: { label: string; value: number; color: strin
         {slices.map((slice, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs">
             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
-            <span className="truncate text-gray-600">{slice.label}</span>
-            <span className="text-gray-400 shrink-0">{Math.round((slice.value / total) * 100)}%</span>
+            <span className="truncate text-gray-600 dark:text-gray-300 ">{slice.label}</span>
+            <span className="text-gray-400 dark:text-gray-500 shrink-0">{Math.round((slice.value / total) * 100)}%</span>
           </div>
         ))}
       </div>
@@ -321,7 +321,7 @@ export default function DashboardView({ onNavigate }: Props) {
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-gray-100 text-white" style={themeBgStyle}>
+      <div className="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700 text-white" style={themeBgStyle}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">总览</h1>
@@ -341,7 +341,7 @@ export default function DashboardView({ onNavigate }: Props) {
                 <Palette size={16} />
               </button>
               {showColorPicker && (
-                <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-10 flex gap-1.5">
+                <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-2 z-10 flex gap-1.5">
                   {THEME_COLORS.map(c => (
                     <button
                       key={c.value}
@@ -360,17 +360,17 @@ export default function DashboardView({ onNavigate }: Props) {
 
       <div className="p-4 space-y-3">
         {/* Notification Toggle */}
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center justify-between">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell size={18} className={notifEnabled ? 'text-blue-500' : 'text-gray-400'} />
-            <span className="text-sm font-medium text-gray-900">提醒通知</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 ">提醒通知</span>
           </div>
           <button
             onClick={toggleNotifications}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               notifEnabled
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
             }`}
           >
             {notifEnabled ? '已开启' : '开启'}
@@ -379,27 +379,27 @@ export default function DashboardView({ onNavigate }: Props) {
 
         {/* Smart Recommendations */}
         {recommendations.length > 0 && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
             <div className="flex items-center gap-2 mb-3">
               <Lightbulb size={18} className="text-yellow-500" />
-              <h3 className="font-semibold text-gray-900">智能推荐</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 ">智能推荐</h3>
             </div>
             <div className="space-y-2">
               {recommendations.map((rec, i) => (
                 <div key={i} className={`p-2.5 rounded-lg text-sm ${
                   rec.priority === 'high' ? 'bg-red-50 border border-red-100' :
                   rec.priority === 'medium' ? 'bg-yellow-50 border border-yellow-100' :
-                  'bg-gray-50 border border-gray-100'
+                  'bg-gray-50 dark:bg-gray-800/50 border border-gray-100'
                 }`}>
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                       rec.priority === 'high' ? 'bg-red-100 text-red-700' :
                       rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-600'
+                      'bg-gray-100 dark:bg-gray-700 text-gray-600'
                     }`}>{rec.priority === 'high' ? '重要' : rec.priority === 'medium' ? '建议' : '提示'}</span>
                     <span className="font-medium text-gray-800">{rec.title}</span>
                   </div>
-                  <p className="text-gray-600 text-xs">{rec.description}</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-xs">{rec.description}</p>
                   {rec.action && (
                     <button
                       onClick={() => {
@@ -423,12 +423,12 @@ export default function DashboardView({ onNavigate }: Props) {
         {/* Quick Entry Cards */}
         <div className="grid grid-cols-3 gap-3">
           {/* Habit Entry */}
-          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 ">
             <div className="flex items-center justify-between mb-2">
               <Dumbbell size={18} className="text-green-500" />
               <span className="text-xs font-medium text-green-600">{habitDoneCount}/{habitTotal}</span>
             </div>
-            <div className="text-sm font-semibold text-gray-900">习惯打卡</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 ">习惯打卡</div>
             {habits.length > 0 ? (
               <div className="mt-2 space-y-1">
                 {habits.slice(0, 3).map(habit => {
@@ -438,7 +438,7 @@ export default function DashboardView({ onNavigate }: Props) {
                       key={habit.id}
                       onClick={() => toggleHabitLog(habit.id!, todayStr)}
                       className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg text-xs transition-colors ${
-                        logged ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        logged ? 'bg-green-50 text-green-700' : 'bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 hover:bg-gray-100'
                       }`}
                     >
                       <div className={`w-2 h-2 rounded-full ${logged ? 'bg-green-500' : 'bg-gray-300'}`} style={logged ? {} : { backgroundColor: habit.color }} />
@@ -454,37 +454,37 @@ export default function DashboardView({ onNavigate }: Props) {
                 )}
               </div>
             ) : (
-              <div className="text-xs text-gray-400 mt-0.5">还没有习惯</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">还没有习惯</div>
             )}
           </div>
 
           {/* Mood Entry */}
-          <button onClick={() => setShowMoodForm(true)} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-left">
+          <button onClick={() => setShowMoodForm(true)} className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 text-left">
             <div className="flex items-center justify-between mb-2">
               <Smile size={18} className="text-yellow-500" />
               <span className="text-xl">{moodEntry?.emoji || '—'}</span>
             </div>
-            <div className="text-sm font-semibold text-gray-900">今日心情</div>
-            <div className="text-xs text-gray-400 mt-0.5 truncate">
+            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 ">今日心情</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
               {moodEntry ? moodEntry.note || '已记录' : '点我记录'}
             </div>
           </button>
 
           {/* Stats Entry */}
-          <button onClick={() => onNavigate('stats')} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-left">
+          <button onClick={() => onNavigate('stats')} className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 text-left">
             <div className="flex items-center justify-between mb-2">
               <BarChart3 size={18} className="text-blue-500" />
             </div>
-            <div className="text-sm font-semibold text-gray-900">数据回顾</div>
-            <div className="text-xs text-gray-400 mt-0.5">查看统计</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 ">数据回顾</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">查看统计</div>
           </button>
         </div>
 
         {/* Workload Stats Card */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-3">
             <Briefcase size={18} className="text-fuchsia-600" />
-            <h2 className="font-semibold text-gray-900">今日工作量</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">今日工作量</h2>
           </div>
 
           <div className="flex gap-3 mb-3">
@@ -505,14 +505,14 @@ export default function DashboardView({ onNavigate }: Props) {
           {pieData.length > 0 && <PieChart data={pieData} />}
 
           {todayDoneLessons.length === 0 && tasksWithoutLessons.length === 0 ? (
-            <p className="text-sm text-gray-400 mt-3">今天还没有完成任务，加油！💪</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">今天还没有完成任务，加油！💪</p>
           ) : (
             <div className="space-y-1.5 mt-3">
               {todayDoneLessons.slice(0, 3).map(lesson => (
                 <div key={lesson.id} className="flex items-center gap-2 text-sm">
                   <CheckCircle2 size={14} className="text-green-500 shrink-0" />
                   <span className="truncate">{lesson.title}</span>
-                  <span className="text-xs text-gray-400 shrink-0">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
                     {formatDuration(lesson.durationMinutes)}
                   </span>
                 </div>
@@ -521,11 +521,11 @@ export default function DashboardView({ onNavigate }: Props) {
                 <div key={task.id} className="flex items-center gap-2 text-sm">
                   <CheckCircle2 size={14} className="text-green-500 shrink-0" />
                   <span className="truncate">{task.title}</span>
-                  <span className="text-xs text-gray-400 shrink-0">60分钟</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">60分钟</span>
                 </div>
               ))}
               {(todayDoneLessons.length + tasksWithoutLessons.length) > 3 && (
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                   还有 {todayDoneLessons.length + tasksWithoutLessons.length - 3} 个…
                 </p>
               )}
@@ -549,18 +549,18 @@ export default function DashboardView({ onNavigate }: Props) {
         )}
 
         {/* Today's Schedule */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Calendar size={18} className="text-blue-500" />
-              <h2 className="font-semibold text-gray-900">今日日程</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">今日日程</h2>
             </div>
             <button onClick={() => onNavigate('schedule')} className="text-xs text-blue-600 flex items-center gap-0.5">
               查看全部 <ChevronRight size={14} />
             </button>
           </div>
           {todayLessons.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">今天没有课，可以摸鱼了 🐟</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 py-2">今天没有课，可以摸鱼了 🐟</p>
           ) : (
             <div className="space-y-2">
               {todayLessons.map(lesson => {
@@ -577,18 +577,18 @@ export default function DashboardView({ onNavigate }: Props) {
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: lesson.color }} />
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-medium truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>{lesson.title}</div>
-                      <div className="text-xs text-gray-400 flex items-center gap-1">
+                      <div className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                         <span>{lesson.startHour.toString().padStart(2, '0')}:{lesson.startMinute.toString().padStart(2, '0')} · {lesson.durationMinutes}分钟</span>
                         {isActive && <span className="text-blue-600 font-medium">进行中</span>}
                         {isDone && <span className="text-green-600">已完成</span>}
-                        {isPast && <span className="text-gray-400">已结束</span>}
+                        {isPast && <span className="text-gray-400 dark:text-gray-500 ">已结束</span>}
                         {isUpcoming && <span className="text-orange-500">即将开始</span>}
                       </div>
                     </div>
                     <button
                       onClick={() => toggleLessonComplete(lesson)}
                       className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                        isDone ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-green-50 hover:text-green-500'
+                        isDone ? 'bg-green-100 text-green-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 hover:bg-green-50 hover:text-green-500'
                       }`}
                       title={isDone ? '取消完成' : '标记完成'}
                     >
@@ -605,25 +605,25 @@ export default function DashboardView({ onNavigate }: Props) {
         </div>
 
         {/* Important Tasks */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <ListTodo size={18} className="text-orange-500" />
-              <h2 className="font-semibold text-gray-900">重要任务</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">重要任务</h2>
             </div>
             <button onClick={() => onNavigate('task')} className="text-xs text-blue-600 flex items-center gap-0.5">
               查看全部 <ChevronRight size={14} />
             </button>
           </div>
           {importantTasks.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">所有任务已完成 🎉 可以躺平了</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 py-2">所有任务已完成 🎉 可以躺平了</p>
           ) : (
             <div className="space-y-2">
               {importantTasks.map(task => (
                 <div key={task.id} className="flex items-center gap-2">
                   <button
                     onClick={() => quickMarkTaskDone(task.id!)}
-                    className="shrink-0 w-5 h-5 rounded-full border-2 border-gray-300 hover:border-green-500 hover:bg-green-50 flex items-center justify-center transition-colors"
+                    className="shrink-0 w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-green-500 hover:bg-green-50 flex items-center justify-center transition-colors"
                     title="标记完成"
                   >
                     <CheckCircle2 size={12} className="text-green-500 opacity-0 hover:opacity-100" />
@@ -635,7 +635,7 @@ export default function DashboardView({ onNavigate }: Props) {
                     <div className="text-sm text-gray-800 truncate">{task.title}</div>
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    task.status === 'in_progress' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                    task.status === 'in_progress' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
                   }`}>
                     {task.status === 'in_progress' ? '进行中' : '待办'}
                   </span>
@@ -689,18 +689,18 @@ export default function DashboardView({ onNavigate }: Props) {
         )}
 
         {/* Goal Progress */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Target size={18} className="text-green-500" />
-              <h2 className="font-semibold text-gray-900">目标进度</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">目标进度</h2>
             </div>
             <button onClick={() => onNavigate('goal')} className="text-xs text-blue-600 flex items-center gap-0.5">
               查看全部 <ChevronRight size={14} />
             </button>
           </div>
           {goalProgress.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">还没有设定目标，先立个 flag 🚩</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 py-2">还没有设定目标，先立个 flag 🚩</p>
           ) : (
             <div className="space-y-3">
               {goalProgress.map(({ goal, doneCount, total, percent }) => (
@@ -710,9 +710,9 @@ export default function DashboardView({ onNavigate }: Props) {
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
                       <span className="text-sm text-gray-800">{goal.title}</span>
                     </div>
-                    <span className="text-xs text-gray-400">{doneCount}/{total}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 ">{doneCount}/{total}</span>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{ width: `${percent}%`, backgroundColor: goal.color }}
@@ -725,18 +725,18 @@ export default function DashboardView({ onNavigate }: Props) {
         </div>
 
         {/* Recent Sleep */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Moon size={18} className="text-indigo-500" />
-              <h2 className="font-semibold text-gray-900">近期睡眠</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">近期睡眠</h2>
             </div>
             <button onClick={() => onNavigate('sleep')} className="text-xs text-blue-600 flex items-center gap-0.5">
               查看全部 <ChevronRight size={14} />
             </button>
           </div>
           {recentSleep.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">还没有睡眠记录，别熬了早点睡 😴</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 py-2">还没有睡眠记录，别熬了早点睡 😴</p>
           ) : (
             <div className="space-y-2">
               {recentSleep.map(record => {
@@ -745,8 +745,8 @@ export default function DashboardView({ onNavigate }: Props) {
                 return (
                   <div key={record.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-gray-400" />
-                      <span className="text-sm text-gray-700">
+                      <Clock size={14} className="text-gray-400 dark:text-gray-500 " />
+                      <span className="text-sm text-gray-700 dark:text-gray-300 ">
                         {d.getMonth() + 1}/{d.getDate()} · {formatDuration(duration)}
                       </span>
                     </div>
@@ -767,11 +767,11 @@ export default function DashboardView({ onNavigate }: Props) {
         </div>
 
         {/* Mood Trend */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Smile size={18} className="text-yellow-500" />
-              <h2 className="font-semibold text-gray-900">心情趋势</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">心情趋势</h2>
             </div>
             {moodTrend && (
               <span className={`text-xs font-medium ${
@@ -782,7 +782,7 @@ export default function DashboardView({ onNavigate }: Props) {
             )}
           </div>
           {recentMoodEntries.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">还没有心情记录，点上方卡片记录一下 😊</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 py-2">还没有心情记录，点上方卡片记录一下 😊</p>
           ) : (
             <div className="space-y-3">
               {/* Recent 7 days */}
@@ -791,11 +791,11 @@ export default function DashboardView({ onNavigate }: Props) {
                   <button
                     key={e.date}
                     onClick={() => onNavigate('stats')}
-                    className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-800/50 transition-colors"
                     title={`${e.date}${e.note ? ': ' + e.note : ''}`}
                   >
                     <span className="text-lg">{e.emoji}</span>
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 ">
                       {new Date(e.date).getMonth() + 1}/{new Date(e.date).getDate()}
                     </span>
                   </button>
@@ -803,10 +803,10 @@ export default function DashboardView({ onNavigate }: Props) {
               </div>
               {/* Distribution */}
               {moodDistribution.size > 0 && (
-                <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
-                  <span className="text-xs text-gray-500">分布：</span>
+                <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-700 ">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ">分布：</span>
                   {Array.from(moodDistribution.entries()).map(([emoji, count]) => (
-                    <span key={emoji} className="flex items-center gap-0.5 text-xs text-gray-600">
+                    <span key={emoji} className="flex items-center gap-0.5 text-xs text-gray-600 dark:text-gray-300 ">
                       <span>{emoji}</span>
                       <span className="font-medium">{count}</span>
                     </span>
@@ -821,12 +821,12 @@ export default function DashboardView({ onNavigate }: Props) {
         {showMoodForm && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
                onClick={() => setShowMoodForm(false)}>
-            <div className="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+            <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
                  onClick={(e: React.MouseEvent) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">今日心情</h2>
                 <button onClick={() => setShowMoodForm(false)}>
-                  <span className="text-gray-400 text-xl">&times;</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xl">&times;</span>
                 </button>
               </div>
               <div className="flex justify-center gap-3 mb-4">
@@ -839,7 +839,7 @@ export default function DashboardView({ onNavigate }: Props) {
               </div>
               <textarea value={moodNote} onChange={e => setMoodNote(e.target.value)}
                         placeholder="写点什么...（可选）"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none h-20" />
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none h-20" />
               <button onClick={saveMood}
                       className="w-full mt-4 py-2.5 rounded-xl bg-blue-600 text-white font-medium">
                 保存

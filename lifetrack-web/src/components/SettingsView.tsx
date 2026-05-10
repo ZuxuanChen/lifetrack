@@ -259,9 +259,9 @@ export default function SettingsView() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200 flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 px-4 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
         <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
-                className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200">
           <ArrowLeft size={18} />
         </button>
         <h1 className="text-lg font-bold">设置</h1>
@@ -269,10 +269,10 @@ export default function SettingsView() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Theme Card */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-3">
             <Moon size={18} className="text-indigo-500" />
-            <h2 className="font-semibold text-gray-900">主题模式</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">主题模式</h2>
           </div>
           <div className="flex gap-2">
             {([
@@ -286,7 +286,7 @@ export default function SettingsView() {
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors ${
                   theme === value
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
                 }`}
               >
                 <Icon size={14} /> {label}
@@ -296,48 +296,48 @@ export default function SettingsView() {
         </div>
 
         {/* Bottom Navigation Card */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-3">
-            <LayoutTemplate size={18} className="text-gray-500" />
-            <h2 className="font-semibold text-gray-900">底部导航</h2>
+            <LayoutTemplate size={18} className="text-gray-500 dark:text-gray-400 " />
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">底部导航</h2>
           </div>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">位置 1（最左）</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">位置 1（最左）</label>
               <select
                 value={slot1}
                 onChange={e => { setSlot1(e.target.value); handleNavChange('lifetrack-nav-slot-1', e.target.value); }}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {NAV_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">位置 2（左中）</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">位置 2（左中）</label>
               <select
                 value={slot2}
                 onChange={e => { setSlot2(e.target.value); handleNavChange('lifetrack-nav-slot-2', e.target.value); }}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {NAV_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">位置 3（中间·大按钮）</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">位置 3（中间·大按钮）</label>
               <select
                 value={slot3}
                 onChange={e => { setSlot3(e.target.value); handleNavChange('lifetrack-nav-slot-3', e.target.value); }}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {NAV_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">位置 4（右中）</label>
+              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">位置 4（右中）</label>
               <select
                 value={slot4}
                 onChange={e => { setSlot4(e.target.value); handleNavChange('lifetrack-nav-slot-4', e.target.value); }}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {NAV_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -346,10 +346,10 @@ export default function SettingsView() {
         </div>
 
         {/* Export/Import Card */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-3">
             <FileJson size={18} className="text-blue-500" />
-            <h2 className="font-semibold text-gray-900">数据备份</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">数据备份</h2>
           </div>
 
           <div className="space-y-3">
@@ -360,18 +360,18 @@ export default function SettingsView() {
               <Download size={16} />
               导出所有数据（JSON）
             </button>
-            <p className="text-xs text-gray-400 text-center">数据版本 v{CURRENT_SCHEMA_VERSION}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center">数据版本 v{CURRENT_SCHEMA_VERSION}</p>
 
             <button
               onClick={() => setShowExportImport(!showExportImport)}
-              className="w-full py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium flex items-center justify-center gap-2"
             >
               <Upload size={16} />
               导入数据
             </button>
 
             {showExportImport && (
-              <div className="bg-gray-50 rounded-xl p-3 space-y-3">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 space-y-3">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -381,7 +381,7 @@ export default function SettingsView() {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-700 flex items-center justify-center gap-2"
+                  className="w-full py-2 rounded-lg bg-white border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2"
                 >
                   {importFile ? importFile.name : '选择 JSON 备份文件'}
                 </button>
@@ -391,7 +391,7 @@ export default function SettingsView() {
                 )}
 
                 {importPreview && (
-                  <div className="text-xs text-gray-600 space-y-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
                     <p className="font-medium text-gray-800">检测到以下数据：</p>
                     <div className="grid grid-cols-3 gap-2">
                       <span>目标: {importPreview.goals}</span>
@@ -414,7 +414,7 @@ export default function SettingsView() {
                           className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
                             importMode === 'overwrite'
                               ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                              : 'bg-white text-gray-600 border border-gray-200'
+                              : 'bg-white text-gray-600 dark:text-gray-300 border border-gray-200'
                           }`}
                         >
                           覆盖导入
@@ -424,7 +424,7 @@ export default function SettingsView() {
                           className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
                             importMode === 'merge'
                               ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                              : 'bg-white text-gray-600 border border-gray-200'
+                              : 'bg-white text-gray-600 dark:text-gray-300 border border-gray-200'
                           }`}
                         >
                           合并导入
@@ -452,12 +452,12 @@ export default function SettingsView() {
           </div>
 
           {/* Excel Import Card */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
             <div className="flex items-center gap-2 mb-3">
               <FileSpreadsheet size={18} className="text-green-500" />
-              <h2 className="font-semibold text-gray-900">Excel 导入</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">Excel 导入</h2>
             </div>
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
               从 .xlsx 文件导入数据。工作表名应包含对应类型（如 Goals、Tasks、Lessons、Habits）。
             </p>
             <input
@@ -496,10 +496,10 @@ export default function SettingsView() {
         </div>
 
         {/* Clear Data Card */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-3">
-            <Settings size={18} className="text-gray-500" />
-            <h2 className="font-semibold text-gray-900">开发调试</h2>
+            <Settings size={18} className="text-gray-500 dark:text-gray-400 " />
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">开发调试</h2>
           </div>
 
           <div className="bg-red-50 border border-red-100 rounded-xl p-4">
@@ -525,18 +525,18 @@ export default function SettingsView() {
       {showConfirm1 && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
              onClick={() => setShowConfirm1(false)}>
-          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl p-5 shadow-xl"
                onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={24} className="text-red-500" />
               <h2 className="text-lg font-bold">确定清除？</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-5">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
               确定要清除所有数据吗？课程、任务、目标、睡眠记录、习惯打卡、心情记录等将全部删除，<strong className="text-red-600">此操作不可恢复！</strong>
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowConfirm1(false)}
-                      className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium">
+                      className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
                 取消
               </button>
               <button onClick={() => { setShowConfirm1(false); setShowConfirm2(true); }}
@@ -552,18 +552,18 @@ export default function SettingsView() {
       {showConfirm2 && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
              onClick={() => setShowConfirm2(false)}>
-          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl p-5 shadow-xl"
                onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={24} className="text-red-500" />
               <h2 className="text-lg font-bold">再次确认</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-5">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
               所有本地数据将被<strong className="text-red-600">永久删除</strong>，无法恢复！确定要继续吗？
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowConfirm2(false)}
-                      className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium">
+                      className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
                 取消
               </button>
               <button onClick={handleClear}
@@ -579,13 +579,13 @@ export default function SettingsView() {
       {showImportConfirm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
              onClick={() => setShowImportConfirm(false)}>
-          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl p-5 shadow-xl"
                onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={24} className={importMode === 'overwrite' ? 'text-orange-500' : 'text-blue-500'} />
               <h2 className="text-lg font-bold">确认{importMode === 'overwrite' ? '覆盖' : '合并'}导入？</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-5">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
               {importMode === 'overwrite' ? (
                 <>导入将<strong className="text-orange-600">覆盖所有现有数据</strong>。当前数据将被替换为备份文件中的内容，此操作不可恢复。</>
               ) : (
@@ -594,7 +594,7 @@ export default function SettingsView() {
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowImportConfirm(false)}
-                      className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium">
+                      className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
                 取消
               </button>
               <button onClick={confirmImport}

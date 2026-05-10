@@ -90,10 +90,10 @@ export default function GoalView() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-white px-4 pt-3 pb-2 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 px-4 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
-                  className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200">
             <ArrowLeft size={18} />
           </button>
           <h1 className="text-lg font-bold">我的目标</h1>
@@ -105,7 +105,7 @@ export default function GoalView() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {goals.length === 0 && (
-          <div className="text-center text-gray-400 mt-20">
+          <div className="text-center text-gray-400 dark:text-gray-500 mt-20">
             <Target size={48} className="mx-auto mb-3 opacity-40" />
             <p>还没有目标，点击右上角添加</p>
           </div>
@@ -118,22 +118,22 @@ export default function GoalView() {
             <button
               key={goal.id}
               onClick={() => openForm(goal)}
-              className="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-left"
+              className="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-left"
             >
               <div className="flex items-start gap-3">
                 <div className="w-3 h-3 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: goal.color }} />
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">{goal.title}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{goal.title}</h3>
                   {goal.description && (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{goal.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{goal.description}</p>
                   )}
                   {progress && progress.total > 0 && (
                     <div className="mt-2">
-                      <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                      <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 mb-1">
                         <span>进度 {progress.done}/{progress.total}</span>
                         <span className={pct === 100 ? 'text-green-600 font-medium' : ''}>{pct}%</span>
                       </div>
-                      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                           style={{ width: `${pct}%` }}
@@ -142,7 +142,7 @@ export default function GoalView() {
                     </div>
                   )}
                   {goalLessonMinutes[goal.id!] && goalLessonMinutes[goal.id!].total > 0 && (
-                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
+                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-400 dark:text-gray-500 ">
                       <Clock size={12} />
                       <span>
                         已投入 {Math.floor(goalLessonMinutes[goal.id!].completed / 60)}小时{goalLessonMinutes[goal.id!].completed % 60}分钟
@@ -153,7 +153,7 @@ export default function GoalView() {
                     </div>
                   )}
                   {goal.deadline && (
-                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
+                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-400 dark:text-gray-500 ">
                       <CalendarDays size={12} />
                       <span>截止: {formatDate(goal.deadline)}</span>
                     </div>
@@ -169,35 +169,35 @@ export default function GoalView() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
              onClick={() => setShowForm(false)}>
-          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
+          <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-xl"
                onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">{editing ? '编辑目标' : '添加目标'}</h2>
-              <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400 dark:text-gray-500 " /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-sm text-gray-500">目标名称</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">目标名称</label>
                 <input value={title} onChange={e => setTitle(e.target.value)}
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">描述</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">描述</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)}
                           rows={3}
-                          className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                          className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">截止日期（可选）</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">截止日期（可选）</label>
                 <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
-                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
               <div>
-                <label className="text-sm text-gray-500">颜色</label>
+                <label className="text-sm text-gray-500 dark:text-gray-400 ">颜色</label>
                 <div className="flex gap-2 mt-1 flex-wrap">
                   {COLORS.map(c => (
                     <button key={c} onClick={() => setColor(c)}

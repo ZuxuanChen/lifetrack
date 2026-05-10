@@ -343,15 +343,15 @@ export default function StatsView() {
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
       {/* Header */}
-      <div className="bg-white px-4 pt-4 pb-3 border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-800 px-4 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700 ">
         <div className="flex items-center gap-2 mb-1">
           <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'dashboard' }))}
-                  className="p-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200">
             <ArrowLeft size={18} />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">数据回顾</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 ">数据回顾</h1>
         </div>
-        <p className="text-sm text-gray-400 mt-0.5">看看这段时间的进步 📈</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">看看这段时间的进步 📈</p>
       </div>
 
       <div className="p-4 space-y-4">
@@ -359,13 +359,13 @@ export default function StatsView() {
         <div className="flex gap-2">
           <button
             onClick={exportWorkloadCsv}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-800/50 transition-colors"
           >
             <Download size={14} /> 导出工作量 CSV
           </button>
           <button
             onClick={exportTasksCsv}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-800/50 transition-colors"
           >
             <Download size={14} /> 导出任务 CSV
           </button>
@@ -386,131 +386,131 @@ export default function StatsView() {
         )}
 
         {/* Focus Stats */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-3">
             <Clock size={18} className="text-blue-500" />
-            <h2 className="font-semibold text-gray-900">专注统计</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">专注统计</h2>
           </div>
           <div className="flex gap-4">
             <div className="text-center flex-1">
-              <div className="text-2xl font-bold text-gray-900">{(totalFocusMinutes / 60).toFixed(1)}</div>
-              <div className="text-xs text-gray-400">累计小时</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 ">{(totalFocusMinutes / 60).toFixed(1)}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 ">累计小时</div>
             </div>
             <div className="text-center flex-1">
-              <div className="text-2xl font-bold text-gray-900">{thisWeekFocus.length}</div>
-              <div className="text-xs text-gray-400">本周次数</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 ">{thisWeekFocus.length}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 ">本周次数</div>
             </div>
             <div className="text-center flex-1">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 ">
                 {focusSessions.length > 0 ? Math.round(totalFocusMinutes / focusSessions.length) : 0}
               </div>
-              <div className="text-xs text-gray-400">平均分钟</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 ">平均分钟</div>
             </div>
             <div className="text-center flex-1">
-              <div className="text-2xl font-bold text-gray-900">{focusStreak}</div>
-              <div className="text-xs text-gray-400">连续天数</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 ">{focusStreak}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 ">连续天数</div>
             </div>
           </div>
         </div>
 
         {/* Focus Trend */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-2">
             <Zap size={18} className="text-blue-500" />
-            <h2 className="font-semibold text-gray-900">专注趋势（小时）</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">专注趋势（小时）</h2>
           </div>
           <BarChart data={focusData} color="#3B82F6" />
         </div>
 
         {/* Workload Trend */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={18} className="text-fuchsia-600" />
-            <h2 className="font-semibold text-gray-900">工作量趋势（小时）</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">工作量趋势（小时）</h2>
           </div>
           <BarChart data={workloadData} color="#C026D3" />
         </div>
 
         {/* Tasks Done Trend */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 size={18} className="text-green-500" />
-            <h2 className="font-semibold text-gray-900">任务完成数</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">任务完成数</h2>
           </div>
           <BarChart data={taskData} color="#10B981" />
         </div>
 
         {/* Sleep-Focus Correlation */}
         {sleepFocusCorr && sleepFocusCorr.qualityCorrelation.length > 0 && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
             <div className="flex items-center gap-2 mb-3">
               <BrainCircuit size={18} className="text-purple-500" />
-              <h2 className="font-semibold text-gray-900">睡眠与专注关联分析</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">睡眠与专注关联分析</h2>
             </div>
-            <p className="text-sm text-gray-700 mb-3">{sleepFocusCorr.recommendation}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{sleepFocusCorr.recommendation}</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xs text-gray-500 mb-1.5">按睡眠质量</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">按睡眠质量</p>
                 <div className="space-y-1.5">
                   {sleepFocusCorr.qualityCorrelation.map(q => (
                     <div key={q.quality} className="flex items-center gap-2">
                       <span className="text-xs w-8">{q.quality}分</span>
-                      <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-purple-500 rounded-full"
                           style={{ width: `${Math.min(100, q.avgFocusMinutes / 2)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-500 w-10 text-right">{q.avgFocusMinutes}分</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-10 text-right">{q.avgFocusMinutes}分</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-1.5">按睡眠时长</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">按睡眠时长</p>
                 <div className="space-y-1.5">
                   {sleepFocusCorr.durationCorrelation.map(d => (
                     <div key={d.range} className="flex items-center gap-2">
                       <span className="text-xs w-10">{d.range}</span>
-                      <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-indigo-500 rounded-full"
                           style={{ width: `${Math.min(100, d.avgFocusMinutes / 2)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-500 w-10 text-right">{d.avgFocusMinutes}分</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-10 text-right">{d.avgFocusMinutes}分</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="mt-3 text-xs text-gray-400 text-center">
+            <div className="mt-3 text-xs text-gray-400 dark:text-gray-500 text-center">
               基于 {sleepFocusCorr.qualityCorrelation.reduce((s, q) => s + q.days, 0)} 天数据 · 相关系数 {sleepFocusCorr.correlationCoefficient.toFixed(2)}
             </div>
           </div>
         )}
 
         {/* Sleep Trend */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-2">
             <BedDouble size={18} className="text-indigo-500" />
-            <h2 className="font-semibold text-gray-900">睡眠时长（小时）</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">睡眠时长（小时）</h2>
           </div>
           <LineChart data={sleepData} color="#6366F1" />
         </div>
 
         {/* Mood Timeline */}
         {moodEntries.length > 0 && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
             <div className="flex items-center gap-2 mb-3">
               <Smile size={18} className="text-yellow-500" />
-              <h2 className="font-semibold text-gray-900">心情记录</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">心情记录</h2>
             </div>
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
               {moodEntries.slice(0, 7).map(m => (
                 <div key={m.id} className="flex flex-col items-center min-w-[3rem]">
                   <div className="text-2xl">{m.emoji}</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">{m.date.slice(5)}</div>
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{m.date.slice(5)}</div>
                 </div>
               ))}
             </div>
@@ -519,10 +519,10 @@ export default function StatsView() {
 
         {/* Goal Completion */}
         {goals.length > 0 && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
             <div className="flex items-center gap-2 mb-3">
               <Target size={18} className="text-teal-500" />
-              <h2 className="font-semibold text-gray-900">目标完成度</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">目标完成度</h2>
             </div>
             <div className="space-y-3">
               {goalStats.map(({ goal, total, completed }) => {
@@ -532,11 +532,11 @@ export default function StatsView() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goal.color }} />
-                        <span className="text-sm font-medium text-gray-900">{goal.title}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 ">{goal.title}</span>
                       </div>
-                      <span className="text-xs text-gray-500">{completed}/{total} ({pct}%)</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 ">{completed}/{total} ({pct}%)</span>
                     </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: goal.color }} />
                     </div>
                   </div>
@@ -547,11 +547,11 @@ export default function StatsView() {
         )}
 
         {/* Badge Wall */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 ">
           <div className="flex items-center gap-2 mb-3">
             <Trophy size={18} className="text-yellow-500" />
-            <h2 className="font-semibold text-gray-900">成就徽章</h2>
-            <span className="text-xs text-gray-400 ml-auto">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 ">成就徽章</h2>
+            <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
               {badgeUnlocks.length} / {BADGE_DEFS.length}
             </span>
           </div>
@@ -561,18 +561,18 @@ export default function StatsView() {
               const Icon = badge.icon;
               return (
                 <div key={badge.id}
-                     className={`rounded-xl p-3 border ${unlocked ? 'border-gray-100' : 'border-gray-100 opacity-50'}`}
+                     className={`rounded-xl p-3 border ${unlocked ? 'border-gray-100' : 'border-gray-100 dark:border-gray-700 opacity-50'}`}
                      style={unlocked ? { backgroundColor: badge.color + '10' } : {}}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                          style={{ backgroundColor: unlocked ? badge.color : '#e5e7eb' }}>
                       <Icon size={16} className="text-white" />
                     </div>
-                    <div className="text-sm font-medium text-gray-900">{badge.name}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 ">{badge.name}</div>
                   </div>
-                  <div className="text-xs text-gray-400">{badge.desc}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 ">{badge.desc}</div>
                   {unlocked && (
-                    <div className="text-[10px] text-gray-400 mt-1">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                       {new Date(badgeUnlocks.find(b => b.badgeId === badge.id)!.unlockedAt).toLocaleDateString('zh-CN')} 解锁
                     </div>
                   )}
