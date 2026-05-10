@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { db, type Goal, type Task, type Lesson, type SleepRecord, type Habit, type HabitLog, type MoodEntry, todayLocal, formatLocalDate } from '../db';
-import { Calendar, Target, ListTodo, Moon, ChevronRight, Clock, Star, Briefcase, CheckCircle2, Flame, Palette, Dumbbell, BarChart3, Smile, AlertTriangle, Bell } from 'lucide-react';
+import { Calendar, Target, ListTodo, Moon, ChevronRight, Clock, Star, Briefcase, CheckCircle2, Flame, Palette, Dumbbell, BarChart3, Smile, AlertTriangle, Bell, Lightbulb } from 'lucide-react';
 import { isNotificationsEnabled, requestNotificationPermission, setNotificationsEnabled } from '../utils/notifications';
+import { generateRecommendations, type Recommendation } from '../utils/recommendations';
 
 interface Props {
   onNavigate: (tab: 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats') => void;
@@ -85,8 +86,10 @@ export default function DashboardView({ onNavigate }: Props) {
     loadData();
   }, []);
 
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+
   async function loadData() {
-    const [g, t, l, s, h, hl, m] = await Promise.all([
+    const [g, t, l, s, h, hl, m, f] = await Promise.all([
       db.goals.toArray(),
       db.tasks.toArray(),
       db.lessons.toArray(),
@@ -94,6 +97,7 @@ export default function DashboardView({ onNavigate }: Props) {
       db.habits.toArray(),
       db.habitLogs.toArray(),
       db.moodEntries.toArray(),
+      db.focusSessions.toArray(),
     ]);
     setGoals(g);
     setTasks(t);
@@ -108,6 +112,7 @@ export default function DashboardView({ onNavigate }: Props) {
       setMoodEmoji(todayMood.emoji);
       setMoodNote(todayMood.note);
     }
+    setRecommendations(generateRecommendations(g, t, l, h, hl, s, f, m));
   }
 
   const today = new Date();
@@ -367,6 +372,49 @@ export default function DashboardView({ onNavigate }: Props) {
             {notifEnabled ? '已开启' : '开启'}
           </button>
         </div>
+
+        {/* Smart Recommendations */}
+        {recommendations.length > 0 && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-3">
+              <Lightbulb size={18} className="text-yellow-500" />
+              <h3 className="font-semibold text-gray-900">智能推荐</h3>
+            </div>
+            <div className="space-y-2">
+              {recommendations.map((rec, i) => (
+                <div key={i} className={`p-2.5 rounded-lg text-sm ${
+                  rec.priority === 'high' ? 'bg-red-50 border border-red-100' :
+                  rec.priority === 'medium' ? 'bg-yellow-50 border border-yellow-100' :
+                  'bg-gray-50 border border-gray-100'
+                }`}>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                      rec.priority === 'high' ? 'bg-red-100 text-red-700' :
+                      rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>{rec.priority === 'high' ? '重要' : rec.priority === 'medium' ? '建议' : '提示'}</span>
+                    <span className="font-medium text-gray-800">{rec.title}</span>
+                  </div>
+                  <p className="text-gray-600 text-xs">{rec.description}</p>
+                  {rec.action && (
+                    <button
+                      onClick={() => {
+                        if (rec.type === 'task') onNavigate('task');
+                        else if (rec.type === 'goal') onNavigate('task');
+                        else if (rec.type === 'lesson') onNavigate('schedule');
+                        else if (rec.type === 'habit') onNavigate('habit');
+                        else if (rec.type === 'sleep') onNavigate('sleep');
+                        else if (rec.type === 'focus') onNavigate('schedule');
+                        else if (rec.type === 'mood') onNavigate('stats');
+                      }}
+                      className="text-xs text-blue-600 mt-1 hover:underline"
+                    >{rec.action}</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick Entry Cards */}
         <div className="grid grid-cols-3 gap-3">
