@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { db, type Goal, COLORS } from '../db';
-import { Plus, X, Target, CalendarDays, ArrowLeft } from 'lucide-react';
+import { Plus, X, Target, CalendarDays, ArrowLeft, Clock } from 'lucide-react';
 
 
 export default function GoalView() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalTaskCounts, setGoalTaskCounts] = useState<Record<number, { total: number; done: number }>>({});
+  const [goalLessonMinutes, setGoalLessonMinutes] = useState<Record<number, { total: number; completed: number }>>({});
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Goal | null>(null);
 
@@ -19,14 +20,23 @@ export default function GoalView() {
   }, []);
 
   async function loadGoals() {
-    const [allGoals, allTasks] = await Promise.all([db.goals.toArray(), db.tasks.toArray()]);
+    const [allGoals, allTasks, allLessons] = await Promise.all([db.goals.toArray(), db.tasks.toArray(), db.lessons.toArray()]);
     setGoals(allGoals.reverse());
     const counts: Record<number, { total: number; done: number }> = {};
+    const lessonMinutes: Record<number, { total: number; completed: number }> = {};
     for (const g of allGoals) {
       const related = allTasks.filter(t => t.goalId === g.id);
       counts[g.id!] = { total: related.length, done: related.filter(t => t.status === 'done').length };
+      // Calculate lesson time investment
+      const relatedLessons = allLessons.filter(l => l.taskId && related.some(t => t.id === l.taskId));
+      const totalMin = relatedLessons.reduce((s, l) => s + l.durationMinutes, 0);
+      const completedMin = relatedLessons
+        .filter(l => l.completedDates && l.completedDates.length > 0)
+        .reduce((s, l) => s + l.durationMinutes * (l.completedDates?.length || 0), 0);
+      lessonMinutes[g.id!] = { total: totalMin, completed: completedMin };
     }
     setGoalTaskCounts(counts);
+    setGoalLessonMinutes(lessonMinutes);
   }
 
   function openForm(goal?: Goal) {
@@ -129,6 +139,17 @@ export default function GoalView() {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
+                    </div>
+                  )}
+                  {goalLessonMinutes[goal.id!] && goalLessonMinutes[goal.id!].total > 0 && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
+                      <Clock size={12} />
+                      <span>
+                        已投入 {Math.floor(goalLessonMinutes[goal.id!].completed / 60)}小时{goalLessonMinutes[goal.id!].completed % 60}分钟
+                        {goalLessonMinutes[goal.id!].total > goalLessonMinutes[goal.id!].completed && (
+                          <span className="text-gray-300"> / 总计 {Math.floor(goalLessonMinutes[goal.id!].total / 60)}小时{goalLessonMinutes[goal.id!].total % 60}分钟</span>
+                        )}
+                      </span>
                     </div>
                   )}
                   {goal.deadline && (
