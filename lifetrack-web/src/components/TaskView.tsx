@@ -59,6 +59,8 @@ export default function TaskView() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [dueDate, setDueDate] = useState(''); // NEW: due date
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadData();
@@ -162,6 +164,46 @@ export default function TaskView() {
     loadData();
   }
 
+  // Batch operations
+  function toggleSelection(id: number) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAll() {
+    setSelectedIds(new Set(sortedTasks.map(t => t.id!)));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function batchMarkDone() {
+    const ids = Array.from(selectedIds);
+    const now = new Date().toISOString();
+    for (const id of ids) {
+      await db.tasks.update(id, { status: 'done', completedAt: now });
+    }
+    setBatchMode(false);
+    clearSelection();
+    loadData();
+  }
+
+  async function batchDelete() {
+    if (!confirm(`确定删除选中的 ${selectedIds.size} 个任务吗？`)) return;
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await db.tasks.delete(id);
+    }
+    setBatchMode(false);
+    clearSelection();
+    loadData();
+  }
+
   const todayStr = new Date().toISOString().split('T')[0];
   const filteredTasks = tasks.filter(t => {
     if (goalFilter !== 'all' && t.goalId !== goalFilter) return false;
@@ -201,6 +243,21 @@ export default function TaskView() {
             <h1 className="text-lg font-bold">任务追踪</h1>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (batchMode) {
+                  setBatchMode(false);
+                  clearSelection();
+                } else {
+                  setBatchMode(true);
+                }
+              }}
+              className={`p-2 rounded-full text-sm font-medium transition-colors ${
+                batchMode ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              {batchMode ? '完成' : '批量'}
+            </button>
             <button onClick={() => setShowFilter(!showFilter)} className="p-2 text-gray-500">
               <Filter size={18} />
             </button>
@@ -265,20 +322,40 @@ export default function TaskView() {
 
         {sortedTasks.map(task => {
           const goal = goals.find(g => g.id === task.goalId);
+          const isSelected = selectedIds.has(task.id!);
           return (
             <div key={task.id}
-                 className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-start gap-3 ${task.status === 'done' ? 'opacity-60' : ''}`}>
-              <button onClick={() => toggleStatus(task)} className="mt-0.5 shrink-0">
-                {task.status === 'done' ? (
-                  <CheckCircle2 size={22} className="text-green-500" />
-                ) : task.status === 'in_progress' ? (
-                  <Clock size={22} className="text-blue-500" />
-                ) : (
-                  <Circle size={22} className="text-gray-300" />
-                )}
-              </button>
+                 className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-start gap-3 ${task.status === 'done' ? 'opacity-60' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}`}>
+              {batchMode ? (
+                <button
+                  onClick={() => toggleSelection(task.id!)}
+                  className="mt-0.5 shrink-0"
+                >
+                  {isSelected ? (
+                    <CheckCircle2 size={22} className="text-blue-500" />
+                  ) : (
+                    <Circle size={22} className="text-gray-300" />
+                  )}
+                </button>
+              ) : (
+                <button onClick={() => toggleStatus(task)} className="mt-0.5 shrink-0">
+                  {task.status === 'done' ? (
+                    <CheckCircle2 size={22} className="text-green-500" />
+                  ) : task.status === 'in_progress' ? (
+                    <Clock size={22} className="text-blue-500" />
+                  ) : (
+                    <Circle size={22} className="text-gray-300" />
+                  )}
+                </button>
+              )}
 
-              <button onClick={() => openForm(task)} className="flex-1 text-left min-w-0">
+              <button onClick={() => {
+                if (batchMode) {
+                  toggleSelection(task.id!);
+                } else {
+                  openForm(task);
+                }
+              }} className="flex-1 text-left min-w-0">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.color }} />
                   <div className={`font-medium ${task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-900'}`}>
@@ -324,6 +401,30 @@ export default function TaskView() {
           );
         })}
       </div>
+
+      {/* Batch action bar */}
+      {batchMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-4 left-4 right-4 z-40 bg-white rounded-xl shadow-lg border border-gray-200 p-3 flex items-center justify-between"
+             style={{ maxWidth: '500px', margin: '0 auto' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">已选 {selectedIds.size} 项</span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={selectAll} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+              全选
+            </button>
+            <button onClick={clearSelection} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+              清空
+            </button>
+            <button onClick={batchMarkDone} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700">
+              标记完成
+            </button>
+            <button onClick={batchDelete} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700">
+              删除
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Form Modal */}
       {showForm && (
