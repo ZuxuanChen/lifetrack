@@ -1,3 +1,16 @@
+## v1.3.0 — Excel 导入支持
+- **Feature**: 支持从 Excel (.xlsx/.xls) 文件导入数据
+  - 新增 `excel-import.ts` 工具模块：使用 `xlsx` 库解析 Excel 文件
+  - 支持工作表自动识别（Goals/Tasks/Lessons/Habits）
+  - 支持 Excel 日期序列号自动转换为 ISO 日期
+  - 支持重复课程天数解析（逗号分隔数字）
+  - `SettingsView` 新增「Excel 导入」独立卡片
+    - 选择 .xlsx 文件后自动解析并导入
+    - 显示导入结果统计（目标/任务/课程/习惯数量）
+    - 错误提示（空工作表、未识别类型等）
+  - 状态校验：无效 status 自动回退为 `todo`
+
+,
 ## v1.2.0 — 课程与任务功能区分重构
 - **Feature**: 课程（Lesson）与任务（Task）彻底解耦，不再互相转化
   - `Task` 类型新增 `scheduledDayOfWeek`/`scheduledStartHour`/`scheduledStartMinute`/`scheduledDurationMinutes` 字段

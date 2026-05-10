@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { db } from '../db';
 import { useTheme } from './ThemeProvider';
-import { ArrowLeft, Trash2, AlertTriangle, Settings, LayoutTemplate, Download, Upload, FileJson, Moon, Sun, Monitor } from 'lucide-react';
+import { parseExcelFile } from '../utils/excel-import';
+import { ArrowLeft, Trash2, AlertTriangle, Settings, LayoutTemplate, Download, Upload, FileJson, FileSpreadsheet, Moon, Sun, Monitor } from 'lucide-react';
 
 const NAV_OPTIONS = [
   { value: 'task', label: '任务' },
@@ -73,6 +74,58 @@ export default function SettingsView() {
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const [importMode, setImportMode] = useState<'overwrite' | 'merge'>('overwrite');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const excelInputRef = useRef<HTMLInputElement>(null);
+  const [excelImportResult, setExcelImportResult] = useState<{
+    goalsAdded: number;
+    tasksAdded: number;
+    lessonsAdded: number;
+    habitsAdded: number;
+    errors: string[];
+  } | null>(null);
+
+  async function handleExcelImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExcelImportResult(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const { goals, tasks, lessons, habits, errors } = parseExcelFile(buffer);
+      const result = {
+        goalsAdded: 0,
+        tasksAdded: 0,
+        lessonsAdded: 0,
+        habitsAdded: 0,
+        errors,
+      };
+      for (const g of goals) {
+        if (g.title) {
+          await db.goals.add(g as any);
+          result.goalsAdded++;
+        }
+      }
+      for (const t of tasks) {
+        if (t.title) {
+          await db.tasks.add(t as any);
+          result.tasksAdded++;
+        }
+      }
+      for (const l of lessons) {
+        if (l.title) {
+          await db.lessons.add(l as any);
+          result.lessonsAdded++;
+        }
+      }
+      for (const h of habits) {
+        if (h.name) {
+          await db.habits.add(h as any);
+          result.habitsAdded++;
+        }
+      }
+      setExcelImportResult(result);
+    } catch (err: any) {
+      setExcelImportResult({ goalsAdded: 0, tasksAdded: 0, lessonsAdded: 0, habitsAdded: 0, errors: [err.message || 'Excel 解析失败'] });
+    }
+  }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -380,6 +433,49 @@ export default function SettingsView() {
                     >
                       确认{importMode === 'overwrite' ? '覆盖' : '合并'}导入
                     </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Excel Import Card */}
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-3">
+              <FileSpreadsheet size={18} className="text-green-500" />
+              <h2 className="font-semibold text-gray-900">Excel 导入</h2>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              从 .xlsx 文件导入数据。工作表名应包含对应类型（如 Goals、Tasks、Lessons、Habits）。
+            </p>
+            <input
+              ref={excelInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleExcelImport}
+            />
+            <button
+              onClick={() => excelInputRef.current?.click()}
+              className="w-full py-2.5 rounded-xl bg-green-600 text-white font-medium flex items-center justify-center gap-2"
+            >
+              <Upload size={16} />
+              选择 Excel 文件
+            </button>
+            {excelImportResult && (
+              <div className="mt-3 text-xs space-y-1">
+                <p className="font-medium text-gray-800">导入结果：</p>
+                <div className="grid grid-cols-2 gap-1">
+                  <span>目标: {excelImportResult.goalsAdded}</span>
+                  <span>任务: {excelImportResult.tasksAdded}</span>
+                  <span>课程: {excelImportResult.lessonsAdded}</span>
+                  <span>习惯: {excelImportResult.habitsAdded}</span>
+                </div>
+                {excelImportResult.errors.length > 0 && (
+                  <div className="text-red-600 mt-1">
+                    {excelImportResult.errors.map((e, i) => (
+                      <p key={i}>⚠ {e}</p>
+                    ))}
                   </div>
                 )}
               </div>
