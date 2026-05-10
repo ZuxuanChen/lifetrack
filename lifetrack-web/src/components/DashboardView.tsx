@@ -245,7 +245,15 @@ export default function DashboardView({ onNavigate }: Props) {
     loadData();
   }
 
-  // Pie chart data
+  // Goal deadline urgency
+  const goalDeadlineUrgency = goals.map(goal => {
+    if (!goal.deadline || goalProgress.find(g => g.goal.id === goal.id)?.percent === 100) return null;
+    const daysUntil = Math.ceil((new Date(goal.deadline + 'T00:00:00').getTime() - new Date(todayStr + 'T00:00:00').getTime()) / (1000 * 60 * 60 * 24));
+    if (daysUntil < 0) return { goal, level: 'overdue' as const, days: Math.abs(daysUntil) };
+    if (daysUntil <= 3) return { goal, level: 'urgent' as const, days: daysUntil };
+    if (daysUntil <= 7) return { goal, level: 'warning' as const, days: daysUntil };
+    return null;
+  }).filter(Boolean);
   const pieData = todayDoneLessons
     .map(lesson => ({
       label: lesson.title.length > 6 ? lesson.title.slice(0, 6) + '…' : lesson.title,
@@ -534,6 +542,45 @@ export default function DashboardView({ onNavigate }: Props) {
             </div>
           )}
         </div>
+
+        {/* Goal Deadline Alerts */}
+        {goalDeadlineUrgency.length > 0 && (
+          <div className="space-y-2">
+            {goalDeadlineUrgency.map(({ goal, level, days }) => (
+              <div
+                key={goal.id}
+                className={`rounded-xl p-3 shadow-sm border text-left flex items-center gap-2 ${
+                  level === 'overdue'
+                    ? 'bg-red-50 border-red-200'
+                    : level === 'urgent'
+                    ? 'bg-orange-50 border-orange-200'
+                    : 'bg-yellow-50 border-yellow-200'
+                }`}
+              >
+                <AlertTriangle size={16} className={
+                  level === 'overdue' ? 'text-red-500' : level === 'urgent' ? 'text-orange-500' : 'text-yellow-500'
+                } />
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-medium ${
+                    level === 'overdue' ? 'text-red-700' : level === 'urgent' ? 'text-orange-700' : 'text-yellow-700'
+                  }`}>
+                    {goal.title}
+                  </div>
+                  <div className={`text-xs ${
+                    level === 'overdue' ? 'text-red-500' : level === 'urgent' ? 'text-orange-500' : 'text-yellow-600'
+                  }`}>
+                    {level === 'overdue' ? `已过期 ${days} 天` : `还有 ${days} 天截止`}
+                  </div>
+                </div>
+                <button onClick={() => onNavigate('goal')} className="text-xs font-medium shrink-0"
+                  style={{ color: level === 'overdue' ? '#DC2626' : level === 'urgent' ? '#EA580C' : '#CA8A04' }}
+                >
+                  去处理 →
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Goal Progress */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
