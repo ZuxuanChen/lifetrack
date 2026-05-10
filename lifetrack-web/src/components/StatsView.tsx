@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { db, type Task, type Lesson, type SleepRecord, type FocusSession, type MoodEntry, type Habit, type HabitLog, type BadgeUnlock, type Goal, formatLocalDate } from '../db';
-import { Trophy, Star, Zap, Sunrise, Moon, BedDouble, TrendingUp, Clock, CheckCircle2, Smile, ArrowLeft, Target, Download } from 'lucide-react';
+import { Trophy, Star, Zap, Sunrise, Moon, BedDouble, TrendingUp, Clock, CheckCircle2, Smile, ArrowLeft, Target, Download, BrainCircuit } from 'lucide-react';
 import { generateCsv, downloadCsv } from '../utils/csvExport';
+import { analyzeSleepFocusCorrelation, type SleepFocusCorrelation } from '../utils/sleep-focus-correlation';
 
 const BADGE_DEFS = [
   { id: 'first-task', name: '初出茅庐', desc: '完成第一个任务', icon: Star, color: '#F59E0B' },
@@ -24,6 +25,7 @@ export default function StatsView() {
   const [badgeUnlocks, setBadgeUnlocks] = useState<BadgeUnlock[]>([]);
   const [newBadges, setNewBadges] = useState<string[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [sleepFocusCorr, setSleepFocusCorr] = useState<SleepFocusCorrelation | null>(null);
 
   useEffect(() => {
     loadData();
@@ -48,6 +50,7 @@ export default function StatsView() {
     setMoodEntries(m.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     setBadgeUnlocks(bu);
     setGoals(g);
+    setSleepFocusCorr(analyzeSleepFocusCorrelation(s, f));
 
     // Check for new badge unlocks
     const newlyUnlocked: string[] = [];
@@ -438,6 +441,56 @@ export default function StatsView() {
           </div>
           <BarChart data={taskData} color="#10B981" />
         </div>
+
+        {/* Sleep-Focus Correlation */}
+        {sleepFocusCorr && sleepFocusCorr.qualityCorrelation.length > 0 && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-3">
+              <BrainCircuit size={18} className="text-purple-500" />
+              <h2 className="font-semibold text-gray-900">睡眠与专注关联分析</h2>
+            </div>
+            <p className="text-sm text-gray-700 mb-3">{sleepFocusCorr.recommendation}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">按睡眠质量</p>
+                <div className="space-y-1.5">
+                  {sleepFocusCorr.qualityCorrelation.map(q => (
+                    <div key={q.quality} className="flex items-center gap-2">
+                      <span className="text-xs w-8">{q.quality}分</span>
+                      <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-purple-500 rounded-full"
+                          style={{ width: `${Math.min(100, q.avgFocusMinutes / 2)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 w-10 text-right">{q.avgFocusMinutes}分</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">按睡眠时长</p>
+                <div className="space-y-1.5">
+                  {sleepFocusCorr.durationCorrelation.map(d => (
+                    <div key={d.range} className="flex items-center gap-2">
+                      <span className="text-xs w-10">{d.range}</span>
+                      <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-indigo-500 rounded-full"
+                          style={{ width: `${Math.min(100, d.avgFocusMinutes / 2)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 w-10 text-right">{d.avgFocusMinutes}分</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-gray-400 text-center">
+              基于 {sleepFocusCorr.qualityCorrelation.reduce((s, q) => s + q.days, 0)} 天数据 · 相关系数 {sleepFocusCorr.correlationCoefficient.toFixed(2)}
+            </div>
+          </div>
+        )}
 
         {/* Sleep Trend */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
