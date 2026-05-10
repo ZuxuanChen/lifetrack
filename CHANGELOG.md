@@ -1,3 +1,15 @@
+## v1.5.0 — 数据迁移系统
+- **Feature**: IndexedDB schema 版本管理与导入兼容性检查
+  - `db.ts` 导出 `CURRENT_SCHEMA_VERSION = 8`，集中管理 schema 版本
+  - `SettingsView` 导出 JSON 时自动附加 `schemaVersion` 字段
+  - 导入 JSON 时自动检测备份版本：
+    - 旧版本备份：显示警告「部分数据可能需要迁移」
+    - 新版本备份：阻止导入，提示「请先升级应用」
+    - 相同版本：正常导入
+    - 缺失版本：默认为 v1（兼容早期备份）
+  - `SettingsView` 导出按钮下方显示当前数据版本号
+
+,
 ## v1.4.0 — 本地 AI 助手（Ollama 集成）
 - **Feature**: 集成本地 Ollama AI，增加趣味性
   - 新增 `ollama.ts` 工具模块：调用本地 `http://localhost:11434` API

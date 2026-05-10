@@ -122,6 +122,8 @@ export function todayLocal(): string {
 
 // ========== 数据库 ==========
 
+export const CURRENT_SCHEMA_VERSION = 8;
+
 export class LifeTrackDB extends Dexie {
   goals!: Table<Goal>;
   tasks!: Table<Task>;

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { db } from '../db';
+import { db, CURRENT_SCHEMA_VERSION } from '../db';
 import { useTheme } from './ThemeProvider';
 import { parseExcelFile } from '../utils/excel-import';
 import { ArrowLeft, Trash2, AlertTriangle, Settings, LayoutTemplate, Download, Upload, FileJson, FileSpreadsheet, Moon, Sun, Monitor } from 'lucide-react';
@@ -55,6 +55,7 @@ export default function SettingsView() {
       badgeUnlocks: await db.badgeUnlocks.toArray(),
       exportAt: new Date().toISOString(),
       version: 1,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -137,6 +138,16 @@ export default function SettingsView() {
       const data = JSON.parse(text);
       if (!data.version || !Array.isArray(data.goals)) {
         throw new Error('文件格式不正确，缺少必要字段');
+      }
+      const backupVersion = data.schemaVersion || 1;
+      if (backupVersion < CURRENT_SCHEMA_VERSION) {
+        setImportError(`⚠️ 备份来自旧版本 (v${backupVersion})，当前版本 v${CURRENT_SCHEMA_VERSION}。部分数据可能需要迁移。`);
+      } else if (backupVersion > CURRENT_SCHEMA_VERSION) {
+        setImportError(`⚠️ 备份来自新版本 (v${backupVersion})，当前版本 v${CURRENT_SCHEMA_VERSION}。请先升级应用。`);
+        setImportPreview(null);
+        return;
+      } else {
+        setImportError(null);
       }
       setImportPreview({
         goals: data.goals.length,
@@ -349,6 +360,7 @@ export default function SettingsView() {
               <Download size={16} />
               导出所有数据（JSON）
             </button>
+            <p className="text-xs text-gray-400 text-center">数据版本 v{CURRENT_SCHEMA_VERSION}</p>
 
             <button
               onClick={() => setShowExportImport(!showExportImport)}
