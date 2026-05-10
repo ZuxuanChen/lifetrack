@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { db, type Task, type Goal } from '../db';
 import { Plus, X, CheckCircle2, Circle, Clock, ArrowRight, Filter, Repeat, Zap, ArrowUpDown, ArrowLeft } from 'lucide-react';
 
-type FilterStatus = 'all' | 'todo' | 'in_progress' | 'done';
-type SortOrder = 'default' | 'priorityDesc' | 'priorityAsc';
+type FilterStatus = 'all' | 'todo' | 'in_progress' | 'done' | 'overdue';
+type SortOrder = 'default' | 'priorityDesc' | 'priorityAsc' | 'dueDateAsc';
 
 const STATUS_LABELS: Record<string, string> = {
+  all: '全部',
   todo: '待办',
   in_progress: '进行中',
   done: '已完成',
+  overdue: '已过期',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -33,6 +35,7 @@ const SORT_LABELS: Record<SortOrder, string> = {
   default: '默认排序',
   priorityDesc: '优先级 ↓',
   priorityAsc: '优先级 ↑',
+  dueDateAsc: '截止日期 ↑',
 };
 
 const COLORS = [
@@ -58,6 +61,7 @@ export default function TaskView() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [dueDate, setDueDate] = useState(''); // NEW: due date
 
   useEffect(() => {
     loadData();
@@ -84,6 +88,7 @@ export default function TaskView() {
       setIsRecurring(task.isRecurring);
       setStartDate(task.startDate || '');
       setEndDate(task.endDate || '');
+      setDueDate(task.dueDate || '');
     } else {
       setEditing(null);
       setTitle('');
@@ -95,6 +100,7 @@ export default function TaskView() {
       setIsRecurring(false);
       setStartDate('');
       setEndDate('');
+      setDueDate('');
     }
     setShowForm(true);
   }
@@ -119,6 +125,7 @@ export default function TaskView() {
       scheduleType,
       createdAt: editing?.createdAt || new Date().toISOString(),
       completedAt: editing?.completedAt,
+      dueDate: dueDate || undefined,
       color,
       isRecurring,
       startDate: isRecurring ? startDate || undefined : undefined,
@@ -158,11 +165,22 @@ export default function TaskView() {
     loadData();
   }
 
-  const filteredTasks = tasks.filter(t => filter === 'all' || t.status === filter);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const filteredTasks = tasks.filter(t => {
+    if (filter === 'all') return true;
+    if (filter === 'overdue') return t.status !== 'done' && t.dueDate && t.dueDate < todayStr;
+    return t.status === filter;
+  });
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (sortOrder === 'priorityDesc') return b.priority - a.priority;
     if (sortOrder === 'priorityAsc') return a.priority - b.priority;
+    if (sortOrder === 'dueDateAsc') {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    }
     return 0;
   });
 
@@ -205,16 +223,16 @@ export default function TaskView() {
         {/* Filter & Sort chips */}
         {showFilter && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {(['all', 'todo', 'in_progress', 'done'] as FilterStatus[]).map(f => (
+            {(['all', 'todo', 'in_progress', 'done', 'overdue'] as FilterStatus[]).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                         filter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
                       }`}>
-                {f === 'all' ? '全部' : STATUS_LABELS[f]}
+                {STATUS_LABELS[f]}
               </button>
             ))}
             <button onClick={() => {
-              const orders: SortOrder[] = ['default', 'priorityDesc', 'priorityAsc'];
+              const orders: SortOrder[] = ['default', 'priorityDesc', 'priorityAsc', 'dueDateAsc'];
               const idx = orders.indexOf(sortOrder);
               setSortOrder(orders[(idx + 1) % orders.length]);
             }}
@@ -270,6 +288,17 @@ export default function TaskView() {
                   ) : (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex items-center gap-0.5">
                       <Zap size={10} /> 单次
+                    </span>
+                  )}
+                  {task.dueDate && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5 ${
+                      task.status === 'done' ? 'bg-gray-100 text-gray-400' :
+                      new Date(task.dueDate) < new Date(new Date().toISOString().split('T')[0]) ? 'bg-red-100 text-red-600' :
+                      task.dueDate === new Date().toISOString().split('T')[0] ? 'bg-orange-100 text-orange-600' :
+                      'bg-blue-100 text-blue-600'
+                    }`}>
+                      {new Date(task.dueDate) < new Date(new Date().toISOString().split('T')[0]) && task.status !== 'done' ? '⚠️ ' : '📅 '}
+                      {task.dueDate.slice(5)}
                     </span>
                   )}
                   {goal && (
@@ -366,6 +395,16 @@ export default function TaskView() {
                              className="w-full mt-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm" />
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* Due Date */}
+              <div>
+                <label className="text-sm text-gray-500">截止日期（可选）</label>
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {dueDate && new Date(dueDate) < new Date(new Date().toISOString().split('T')[0]) && (
+                  <p className="text-xs text-red-500 mt-1">⚠️ 截止日期已过</p>
                 )}
               </div>
 

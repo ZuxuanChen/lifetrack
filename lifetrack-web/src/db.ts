@@ -23,6 +23,7 @@ export interface Task {
   scheduleType: TaskScheduleType;
   createdAt: string;
   completedAt?: string;
+  dueDate?: string; // YYYY-MM-DD format, optional deadline
   color: string; // task color
   isRecurring: boolean;
   startDate?: string;

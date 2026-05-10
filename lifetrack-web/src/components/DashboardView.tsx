@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, type Goal, type Task, type Lesson, type SleepRecord, type Habit, type HabitLog, type MoodEntry, todayLocal, formatLocalDate } from '../db';
-import { Calendar, Target, ListTodo, Moon, ChevronRight, Clock, Star, Briefcase, CheckCircle2, Flame, Palette, Dumbbell, BarChart3, Smile } from 'lucide-react';
+import { Calendar, Target, ListTodo, Moon, ChevronRight, Clock, Star, Briefcase, CheckCircle2, Flame, Palette, Dumbbell, BarChart3, Smile, AlertTriangle } from 'lucide-react';
 
 interface Props {
   onNavigate: (tab: 'schedule' | 'task' | 'goal' | 'sleep' | 'habit' | 'stats') => void;
@@ -167,6 +167,9 @@ export default function DashboardView({ onNavigate }: Props) {
     .filter(t => t.status !== 'done')
     .sort((a, b) => b.priority - a.priority)
     .slice(0, 5);
+
+  const todayStr = todayLocal();
+  const overdueTasks = tasks.filter(t => t.status !== 'done' && t.dueDate && t.dueDate < todayStr);
 
   // Goal progress
   const goalProgress = goals.map(goal => {
@@ -370,6 +373,21 @@ export default function DashboardView({ onNavigate }: Props) {
             </div>
           )}
         </div>
+
+        {/* Overdue Tasks Alert */}
+        {overdueTasks.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-red-500" />
+              <span className="text-sm font-medium text-red-700">
+                {overdueTasks.length} 个任务已过期
+              </span>
+              <button onClick={() => onNavigate('task')} className="ml-auto text-xs text-red-600 font-medium">
+                去处理 →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Today's Schedule */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
