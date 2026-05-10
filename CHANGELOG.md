@@ -1,3 +1,12 @@
+## v1.2.0 — 课程与任务功能区分重构
+- **Feature**: 课程（Lesson）与任务（Task）彻底解耦，不再互相转化
+  - `Task` 类型新增 `scheduledDayOfWeek`/`scheduledStartHour`/`scheduledStartMinute`/`scheduledDurationMinutes` 字段
+  - 任务拖拽到课程表后，不再创建 Lesson，而是更新 Task 的 schedule 字段
+  - 课程表周视图同时渲染 Lessons（规律性课程）和 scheduled Tasks（已安排任务）
+  - 已安排任务以虚线边框 + 半透明背景 + 📋 任务标识与课程区分
+  - `Lesson.taskId` 不再使用（保留字段以兼容旧数据）
+  - `saveTaskAsLesson` 改为 `saveTaskAsScheduled`，移除 Lesson 创建逻辑
+
 ## v1.0.0 — 深色模式
 - **Feature**: 系统级深色模式支持 + 手动切换
   - 新增 `ThemeProvider` 组件：管理主题状态，支持 `light`/`dark`/`system` 三种模式

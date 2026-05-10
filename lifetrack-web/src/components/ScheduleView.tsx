@@ -270,31 +270,17 @@ export default function ScheduleView() {
     setShowTaskScheduleForm(true);
   }
 
-  async function saveTaskAsLesson() {
-    if (!selectedTask) return;
-    const data: Lesson = {
-      taskId: selectedTask.id,
-      title: title.trim() || selectedTask.title,
-      dayOfWeek,
-      startHour,
-      startMinute,
-      durationMinutes: duration,
-      color,
-      location: location.trim() || undefined,
-      repeatDays: repeatDays.length > 0 ? repeatDays : undefined,
-      startDate: repeatDays.length > 1 ? startDate || undefined : undefined,
-      endDate: repeatDays.length > 1 ? endDate || undefined : undefined,
-      status: 'todo',
-      completedDates: [],
-    };
-    await db.lessons.add(data);
-    // Update task status to in_progress
-    if (selectedTask.id) {
-      await db.tasks.update(selectedTask.id, { status: 'in_progress' });
-    }
+  async function saveTaskAsScheduled() {
+    if (!selectedTask?.id) return;
+    await db.tasks.update(selectedTask.id, {
+      scheduledDayOfWeek: dayOfWeek,
+      scheduledStartHour: startHour,
+      scheduledStartMinute: startMinute,
+      scheduledDurationMinutes: duration,
+      status: 'in_progress',
+    });
     setShowTaskScheduleForm(false);
     setSelectedTask(null);
-    loadLessons();
     loadTasks();
   }
 
@@ -554,6 +540,36 @@ export default function ScheduleView() {
                         {isDone && (
                           <div className="absolute top-0.5 right-0.5 text-[8px] bg-white/30 px-1 rounded">✓ 已完成</div>
                         )}
+                      </div>
+                    )}
+                  })}
+
+                  {/* Scheduled tasks for this day */}
+                  {tasks.filter(t =>
+                    t.scheduledDayOfWeek === dayIdx &&
+                    t.scheduledStartHour !== undefined &&
+                    t.scheduledStartMinute !== undefined &&
+                    t.scheduledDurationMinutes !== undefined
+                  ).map(task => {
+                    const startMin = task.scheduledStartHour! * 60 + task.scheduledStartMinute!;
+                    const top = (startMin - START_HOUR * 60) / 60 * SLOT_HEIGHT;
+                    const height = (task.scheduledDurationMinutes! / 60) * SLOT_HEIGHT;
+                    return (
+                      <div
+                        key={`task-${task.id}`}
+                        className={`absolute left-0.5 right-0.5 rounded-lg px-1.5 py-1 text-left text-xs overflow-hidden shadow-sm border-2 border-dashed ${
+                          task.status === 'done' ? 'opacity-50' : ''
+                        }`}
+                        style={{
+                          top,
+                          height: height - 2,
+                          backgroundColor: task.color + '20',
+                          borderColor: task.color,
+                          color: task.color,
+                        }}
+                      >
+                        <div className={`font-semibold truncate ${task.status === 'done' ? 'line-through' : ''}`}>{task.title}</div>
+                        <div className="text-[10px] opacity-70">📋 任务</div>
                       </div>
                     );
                   })}
@@ -957,9 +973,9 @@ export default function ScheduleView() {
             </div>
 
               <div className="flex gap-3 mt-5">
-                <button onClick={saveTaskAsLesson}
+                <button onClick={saveTaskAsScheduled}
                         className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-medium">
-                  安排到日程表
+                  安排到课程表
                 </button>
               </div>
             </div>
