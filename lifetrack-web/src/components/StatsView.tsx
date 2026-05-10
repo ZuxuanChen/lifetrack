@@ -223,6 +223,27 @@ export default function StatsView() {
     return todayD.getTime() - d.getTime() <= 7 * 24 * 60 * 60 * 1000;
   });
 
+  // Focus per day (last 7 days)
+  const focusData = last7Days.map(({ date }) => {
+    const dayFocus = focusSessions.filter(f => f.date === date);
+    return dayFocus.reduce((s, f) => s + f.durationMinutes, 0) / 60;
+  });
+
+  // Focus streak (consecutive days with focus sessions)
+  const focusStreak = (() => {
+    let streak = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = formatLocalDate(d);
+      if (focusSessions.some(f => f.date === ds)) {
+        streak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+    return streak;
+  })();
+
   // SVG chart helpers
   function BarChart({ data, color }: { data: (number | null)[]; color: string }) {
     const max = Math.max(...data.filter(d => d !== null) as number[], 1);
@@ -384,7 +405,20 @@ export default function StatsView() {
               </div>
               <div className="text-xs text-gray-400">平均分钟</div>
             </div>
+            <div className="text-center flex-1">
+              <div className="text-2xl font-bold text-gray-900">{focusStreak}</div>
+              <div className="text-xs text-gray-400">连续天数</div>
+            </div>
           </div>
+        </div>
+
+        {/* Focus Trend */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap size={18} className="text-blue-500" />
+            <h2 className="font-semibold text-gray-900">专注趋势（小时）</h2>
+          </div>
+          <BarChart data={focusData} color="#3B82F6" />
         </div>
 
         {/* Workload Trend */}
